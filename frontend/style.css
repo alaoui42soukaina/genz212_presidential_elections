@@ -81,6 +81,7 @@ header p {
     border-radius: 12px;
     font-size: 14px;
     background: white;
+    color: #333;
     transition: all 0.3s ease;
     font-family: inherit;
 }
