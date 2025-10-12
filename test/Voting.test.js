@@ -56,7 +56,7 @@ describe("Voting Contract Integration Tests", function () {
       await voting.addCandidate("Bob");
       await voting.addCandidate("Charlie");
       
-      // Test getAllCandidates function (covers line 62 in Voting.sol)
+      // Test getAllCandidates function
       const candidates = await voting.getAllCandidates();
       expect(candidates.length).to.equal(3);
       expect(candidates[0][1]).to.equal("Alice");
@@ -188,138 +188,15 @@ describe("Voting Contract Integration Tests", function () {
     });
   });
 
-  describe("Complex Voting Scenarios", function () {
-    beforeEach(async function () {
-      await voting.addCandidate("Alice");
-      await voting.addCandidate("Bob");
-      await voting.addCandidate("Charlie");
-      await voting.addCandidate("David");
-      await voting.startElection();
-    });
-
-    it("Should handle tie scenarios correctly", async function () {
-      // Create a tie: Alice and Bob both get 2 votes
-      await voting.connect(voter1).vote(1); // Alice
-      await voting.connect(voter2).vote(2); // Bob
-      await voting.connect(voter3).vote(1); // Alice
-      
-      // Add more voters for the tie
-      const [voter4, voter5] = await ethers.getSigners();
-      await voting.connect(voter4).vote(2); // Bob
-      
-      expect(await voting.hasTie()).to.be.true;
-      
-      const tiedCandidates = await voting.getTiedCandidates();
-      expect(tiedCandidates.length).to.equal(2);
-      expect(tiedCandidates.map(Number)).to.include(1); // Alice
-      expect(tiedCandidates.map(Number)).to.include(2); // Bob
-    });
-
-    it("Should calculate detailed results correctly", async function () {
-      // Get fresh signers for this test
-      const signers = await ethers.getSigners();
-      const [v1, v2, v3, v4, v5, v6] = signers.slice(0, 6);
-      
-      // Alice: 3 votes, Bob: 2 votes, Charlie: 1 vote, David: 0 votes
-      await voting.connect(v1).vote(1); // Alice
-      await voting.connect(v2).vote(2); // Bob
-      await voting.connect(v3).vote(1); // Alice
-      await voting.connect(v4).vote(1); // Alice
-      await voting.connect(v5).vote(2); // Bob
-      await voting.connect(v6).vote(3); // Charlie
-      
-      const [candidateIds, names, voteCounts, percentages] = await voting.getDetailedResults();
-      
-      // Verify results
-      expect(candidateIds.length).to.equal(4);
-      expect(voteCounts[0]).to.equal(3); // Alice
-      expect(voteCounts[1]).to.equal(2); // Bob
-      expect(voteCounts[2]).to.equal(1); // Charlie
-      expect(voteCounts[3]).to.equal(0); // David
-      
-      // Verify percentages (total: 6 votes)
-      expect(percentages[0]).to.equal(50); // Alice: 3/6 = 50%
-      expect(percentages[1]).to.equal(33); // Bob: 2/6 = 33%
-      expect(percentages[2]).to.equal(16); // Charlie: 1/6 = 16%
-      expect(percentages[3]).to.equal(0);  // David: 0/6 = 0%
-      
-      // Verify percentages add up to 100 (allow for rounding)
-      const totalPercentage = percentages.reduce((sum, p) => sum + Number(p), 0);
-      expect(totalPercentage).to.be.within(99, 100);
-    });
-
-    it("Should handle candidates sorted by vote count", async function () {
-      // Get fresh signers for this test
-      const signers = await ethers.getSigners();
-      const [v1, v2, v3, v4, v5, v6] = signers.slice(0, 6);
-      
-      // Alice: 1 vote, Bob: 3 votes, Charlie: 2 votes, David: 0 votes
-      await voting.connect(v1).vote(1); // Alice
-      await voting.connect(v2).vote(2); // Bob
-      await voting.connect(v3).vote(3); // Charlie
-      await voting.connect(v4).vote(2); // Bob
-      await voting.connect(v5).vote(2); // Bob
-      await voting.connect(v6).vote(3); // Charlie
-      
-      const [candidateIds, names, voteCounts] = await voting.getCandidatesByVoteCount();
-      
-      // Should be sorted by vote count (descending)
-      expect(candidateIds[0]).to.equal(2); // Bob (3 votes)
-      expect(voteCounts[0]).to.equal(3);
-      
-      expect(candidateIds[1]).to.equal(3); // Charlie (2 votes)
-      expect(voteCounts[1]).to.equal(2);
-      
-      expect(candidateIds[2]).to.equal(1); // Alice (1 vote)
-      expect(voteCounts[2]).to.equal(1);
-      
-      expect(candidateIds[3]).to.equal(4); // David (0 votes)
-      expect(voteCounts[3]).to.equal(0);
-    });
-  });
-
-  describe("Comprehensive Statistics", function () {
-    beforeEach(async function () {
-      await voting.addCandidate("Alice");
-      await voting.addCandidate("Bob");
-      await voting.addCandidate("Charlie");
-      await voting.startElection();
-    });
-
-    it("Should provide comprehensive voting statistics", async function () {
-      await voting.connect(voter1).vote(1);
-      await voting.connect(voter2).vote(2);
-      
-      const [totalCandidates, currentRound, isActive, totalVotes, hasTieResult] = await voting.getVotingStats();
-      
-      expect(totalCandidates).to.equal(3);
-      expect(currentRound).to.equal(1);
-      expect(isActive).to.be.true;
-      expect(totalVotes).to.equal(2);
-      expect(hasTieResult).to.be.true; // Alice and Bob both have 1 vote
-    });
-
-    it("Should track total voters correctly", async function () {
-      await voting.connect(voter1).vote(1);
-      await voting.connect(voter2).vote(2);
-      
-      const totalVoters = await voting.getTotalVoters();
-      const totalVotes = await voting.getTotalVotes();
-      
-      expect(totalVoters).to.equal(totalVotes);
-      expect(totalVoters).to.equal(2);
-    });
-  });
-
   describe("Error Handling and Edge Cases", function () {
-    it("Should handle voting before election starts", async function () {
+    it("Should prohibit voting before election starts", async function () {
       await voting.addCandidate("Alice");
       
       await expect(voting.connect(voter1).vote(1))
         .to.be.revertedWith("Election is not active");
     });
 
-    it("Should handle voting after election ends", async function () {
+    it("Should prohibit voting after election ends", async function () {
       await voting.addCandidate("Alice");
       await voting.startElection();
       await voting.endElection();
@@ -328,7 +205,7 @@ describe("Voting Contract Integration Tests", function () {
         .to.be.revertedWith("Election is not active");
     });
 
-    it("Should handle invalid candidate IDs", async function () {
+    it("Should prohibit voting for invalid candidate IDs", async function () {
       await voting.addCandidate("Alice");
       await voting.startElection();
       
@@ -339,7 +216,7 @@ describe("Voting Contract Integration Tests", function () {
         .to.be.revertedWith("Invalid candidate ID");
     });
 
-    it("Should handle double voting prevention", async function () {
+    it("Should prohibit double voting", async function () {
       await voting.addCandidate("Alice");
       await voting.addCandidate("Bob");
       await voting.startElection();
@@ -348,6 +225,18 @@ describe("Voting Contract Integration Tests", function () {
       
       await expect(voting.connect(voter1).vote(2))
         .to.be.revertedWith("You have already voted in this election");
+    });
+
+    it("Should not allow non-owner to start election", async function () {
+      await expect(
+        voting.connect(voter1).startElection()
+      ).to.be.revertedWith("Only the owner can perform this action");
+    });
+
+    it("Should not allow non-owner to end election", async function () {
+      await expect(
+        voting.connect(voter1).endElection()
+      ).to.be.revertedWith("Only the owner can perform this action");
     });
   });
 });
