@@ -1,0 +1,21 @@
+{
+  "name": "genz212-presidential-elections",
+  "version": "1.0.0",
+  "description": "A minimal voting dapp built with Hardhat",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "node": "hardhat node",
+    "start": "hardhat node & npm run deploy",
+    "stop": "pkill -f 'hardhat node'"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "ethers": "^6.8.0"
+  }
+}

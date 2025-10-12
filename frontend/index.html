@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting DApp</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗳️ Presidential Elections 2024</h1>
+            <p>A decentralized voting application</p>
+        </header>
+
+        <div class="wallet-section">
+            <div class="account-selector">
+                <label for="accountSelect">Select Account:</label>
+                <select id="accountSelect" class="btn btn-secondary">
+                    <option value="0">🔧 Account #0 (0xf39F...2266) - ADMIN</option>
+                    <option value="1">Account #1 (0x7099...79C8)</option>
+                    <option value="2">Account #2 (0x3C44...293BC)</option>
+                    <option value="3">Account #3 (0x90F7...b906)</option>
+                    <option value="4">Account #4 (0x15d3...6A65)</option>
+                    <option value="5">Account #5 (0x9965...4dc)</option>
+                    <option value="6">Account #6 (0x976E...0aa9)</option>
+                    <option value="7">Account #7 (0x14dC...9955)</option>
+                    <option value="8">Account #8 (0x2361...E8f)</option>
+                    <option value="9">Account #9 (0xa0Ee...79720)</option>
+                    <option value="10">Account #10 (0xBcd4...4096)</option>
+                    <option value="11">Account #11 (0x71bE...5788)</option>
+                    <option value="12">Account #12 (0xFABB...694a)</option>
+                    <option value="13">Account #13 (0x1CBd...C9Ec)</option>
+                    <option value="14">Account #14 (0xdF3e...7097)</option>
+                    <option value="15">Account #15 (0xcd3B...ce71)</option>
+                    <option value="16">Account #16 (0x2546...Ec30)</option>
+                    <option value="17">Account #17 (0xbDA5...197E)</option>
+                    <option value="18">Account #18 (0xdD2F...44C0)</option>
+                    <option value="19">Account #19 (0x8626...1199)</option>
+                </select>
+            </div>
+            
+            <button id="connectAccount" class="btn btn-primary">Connect Account</button>
+            
+            <div id="accountInfo" class="wallet-info" style="display: none;">
+                <p>Connected: <span id="accountAddress"></span></p>
+                <p>Account: <span id="accountNumber"></span></p>
+                <button id="disconnectAccount" class="btn btn-danger">Disconnect</button>
+            </div>
+        </div>
+
+        <div class="admin-section" id="adminSection" style="display: none;">
+            <div class="admin-container">
+                <h2>🔧 Election Control</h2>
+                <div class="election-status">
+                    <p>Current Status: <span id="adminElectionStatus" class="status-indicator">Loading...</span></p>
+                </div>
+                <div class="control-buttons">
+                    <button id="startElection" class="btn btn-success" disabled>Start Election</button>
+                    <button id="stopElection" class="btn btn-danger" disabled>Stop Election</button>
+                    <button id="refreshAdminStatus" class="btn btn-secondary">Refresh Status</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="voting-section">
+            <h2>Candidates</h2>
+            <div class="election-status-display">
+                <p>Election Status: <span id="electionStatusDisplay" class="status-indicator">Loading...</span></p>
+            </div>
+            <div id="candidatesList" class="candidates-grid">
+                <!-- Candidates will be loaded here -->
+            </div>
+        </div>
+
+        <div class="results-section">
+            <h2>Live Results</h2>
+            <div id="resultsList" class="results-grid">
+                <!-- Results will be displayed here -->
+            </div>
+            <button id="refreshResults" class="btn btn-secondary">Refresh Results</button>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+    <script>
+        let CONTRACT_ADDRESS = "";
+        const CONTRACT_ABI = [
+            "function candidatesCount() view returns (uint256)",
+            "function getCandidate(uint256 _candidateId) view returns (uint256, string memory, uint256)",
+            "function vote(uint256 _candidateId)",
+            "function checkVoted(address _voter) view returns (bool)",
+            "function addCandidate(string memory _name)",
+            "function getAllCandidates() view returns (tuple(uint256,string,uint256)[])",
+            "function getTotalVotes() view returns (uint256)",
+            "function isElectionActive() view returns (bool)",
+            "function startElection()",
+            "function stopElection()",
+            "function owner() view returns (address)"
+        ];
+        
+        const ACCOUNTS = [
+            { address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", privateKey: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" },
+            { address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", privateKey: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d" },
+            { address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", privateKey: "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a" },
+            { address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906", privateKey: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6" },
+            { address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65", privateKey: "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a" },
+            { address: "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc", privateKey: "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba" },
+            { address: "0x976EA74026E726554dB657fA54763abd0C3a0aa9", privateKey: "0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e" },
+            { address: "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955", privateKey: "0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356" },
+            { address: "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f", privateKey: "0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97" },
+            { address: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720", privateKey: "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6" },
+            { address: "0xBcd4042DE499D14e55001CcbB24a551F3b954096", privateKey: "0xf214f2b2cd398c806f84e317254e0f0b801d0643303237d97a22a48e01628897" },
+            { address: "0x71bE63f3384f5fb98995898A86B02Fb2426c5788", privateKey: "0x701b615bbdfb9de65240bc28bd21bbc0d996645a3dd57e7b12bc2bdf6f192c82" },
+            { address: "0xFABB0ac9d68B0B445fB7357272Ff202C5651694a", privateKey: "0xa267530f49f8280200edf313ee7af6b827f2a8bce2897751d06a843f644967b1" },
+            { address: "0x1CBd3b2770909D4e10f157cABC84C7264073C9Ec", privateKey: "0x47c99abed3324a2707c28affff1267e45918ec8c3f20b8aa892e8b065d2942dd" },
+            { address: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097", privateKey: "0xc526ee95bf44d8fc405a158bb884d9d1238d99f0612e9f33d006bb0789009aaa" },
+            { address: "0xcd3B766CCDd6AE721141F452C550Ca635964ce71", privateKey: "0x8166f546bab6da521a8369cab06c5d2b9e46670292d85c875ee9ec20e84ffb61" },
+            { address: "0x2546BcD3c84621e976D8185a91A922aE77ECEc30", privateKey: "0xea6c44ac03bff858b476bba40716402b03e41b8e97e276d1baec7c37d42484a0" },
+            { address: "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E", privateKey: "0x689af8efa8c651a91ad287602527f3af2fe9f6501a7ac4b061667b5a93e037fd" },
+            { address: "0xdD2FD4581271e230360230F9337D5c0430Bf44C0", privateKey: "0xde9be858da4a475276426320d5e9262ecfc3ba460bfac56360bfa6c4c28b4ee0" },
+            { address: "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199", privateKey: "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e" }
+        ];
+        
+        let provider, signer, contract, userAddress;
+        let readOnlyProvider, readOnlyContract;
+        let CANDIDATES_CONFIG = { candidates: [] };
+        
+        // Load deployment info (contract address)
+        async function loadDeploymentInfo() {
+            try {
+                const response = await fetch('../config/deployment.json');
+                const deploymentInfo = await response.json();
+                CONTRACT_ADDRESS = deploymentInfo.contractAddress;
+                console.log('Loaded contract address:', CONTRACT_ADDRESS);
+            } catch (error) {
+                console.error('Failed to load deployment info:', error);
+                // Fallback to hardcoded address for now
+                CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+                console.log('Using fallback contract address:', CONTRACT_ADDRESS);
+            }
+        }
+
+        // Load candidates config
+        async function loadConfig() {
+            try {
+                const response = await fetch('../config/candidates.json');
+                CANDIDATES_CONFIG = await response.json();
+            } catch (error) {
+                console.error('Failed to load candidates config:', error);
+                // Fallback to hardcoded candidates if config fails to load
+                CANDIDATES_CONFIG = {
+                    candidates: [
+                        "Soukaina Alaoui",
+                        "Aziz Akhannouch",
+                        "Omar Balafrej"
+                    ]
+                };
+            }
+        }
+
+        // Initialize read-only connection on page load
+        async function initializeReadOnly() {
+            try {
+                await loadDeploymentInfo();
+                await loadConfig();
+                
+                if (!CONTRACT_ADDRESS) {
+                    throw new Error('No contract address available');
+                }
+                
+                readOnlyProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, readOnlyProvider);
+                await loadCandidatesReadOnly();
+            } catch (error) {
+                console.log('Read-only connection failed:', error.message);
+            }
+        }
+        
+        // Load candidates in read-only mode
+        async function loadCandidatesReadOnly() {
+            try {
+                const candidatesCount = await readOnlyContract.candidatesCount();
+                const candidatesList = document.getElementById('candidatesList');
+                const resultsList = document.getElementById('resultsList');
+                
+                // Check election status
+                const isElectionActive = await readOnlyContract.isElectionActive();
+                const statusDisplay = document.getElementById('electionStatusDisplay');
+                
+                if (isElectionActive) {
+                    statusDisplay.textContent = 'ACTIVE';
+                    statusDisplay.className = 'status-indicator active';
+                } else {
+                    statusDisplay.textContent = 'INACTIVE';
+                    statusDisplay.className = 'status-indicator inactive';
+                }
+                
+                candidatesList.innerHTML = '';
+                resultsList.innerHTML = '';
+                
+                for (let i = 1; i <= candidatesCount; i++) {
+                    const candidate = await readOnlyContract.getCandidate(i);
+                    
+                    // Voting section (disabled when not connected or election inactive)
+                    const candidateCard = document.createElement('div');
+                    candidateCard.className = 'candidate-card';
+                    candidateCard.innerHTML = `
+                        <div class="candidate-name">${candidate[1]}</div>
+                        <div class="candidate-votes">Current votes: <span class="vote-count">${candidate[2].toString()}</span></div>
+                        <button class="btn btn-vote" disabled>
+                            ${!isElectionActive ? 'Election Not Active' : 'Connect Account to Vote'}
+                        </button>
+                    `;
+                    candidatesList.appendChild(candidateCard);
+                    
+                    // Results section
+                    const resultCard = document.createElement('div');
+                    resultCard.className = 'candidate-card';
+                    resultCard.innerHTML = `
+                        <div class="candidate-name">${candidate[1]}</div>
+                        <div class="vote-count">${candidate[2].toString()}</div>
+                        <div class="candidate-votes">votes</div>
+                    `;
+                    resultsList.appendChild(resultCard);
+                }
+                
+            } catch (error) {
+                console.log('Error loading candidates (read-only):', error.message);
+            }
+        }
+        
+        // Initialize on page load
+        initializeReadOnly();
+        
+        document.getElementById('connectAccount').addEventListener('click', async function() {
+            try {
+                const accountIndex = parseInt(document.getElementById('accountSelect').value);
+                const selectedAccount = ACCOUNTS[accountIndex];
+                
+                provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                signer = new ethers.Wallet(selectedAccount.privateKey, provider);
+                userAddress = selectedAccount.address;
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                
+                // Check if user is the owner
+                const owner = await contract.owner();
+                const isOwner = owner.toLowerCase() === userAddress.toLowerCase();
+                
+                document.getElementById('accountAddress').textContent = 
+                    `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
+                document.getElementById('accountNumber').textContent = `Account #${accountIndex}${isOwner ? ' (Owner)' : ''}`;
+                document.getElementById('accountInfo').style.display = 'block';
+                document.getElementById('connectAccount').style.display = 'none';
+                
+                // Show admin section if user is owner
+                if (isOwner) {
+                    document.getElementById('adminSection').style.display = 'block';
+                    document.getElementById('startElection').disabled = false;
+                    document.getElementById('stopElection').disabled = false;
+                    await loadAdminElectionStatus();
+                }
+                
+                await addSampleCandidates();
+                await loadCandidates();
+                
+            } catch (error) {
+                alert('Connection error: ' + error.message);
+            }
+        });
+        
+        document.getElementById('disconnectAccount').addEventListener('click', function() {
+            provider = null;
+            signer = null;
+            contract = null;
+            userAddress = null;
+            
+            document.getElementById('accountInfo').style.display = 'none';
+            document.getElementById('connectAccount').style.display = 'block';
+            document.getElementById('adminSection').style.display = 'none';
+            
+            // Go back to read-only mode
+            loadCandidatesReadOnly();
+        });
+        
+        async function addSampleCandidates() {
+            try {
+                const candidatesCount = await contract.candidatesCount();
+                if (candidatesCount.toString() === '0') {
+                    for (const candidateName of CANDIDATES_CONFIG.candidates) {
+                        await contract.addCandidate(candidateName);
+                    }
+                }
+            } catch (error) {
+                // Silent fail
+            }
+        }
+        
+        async function loadCandidates() {
+            try {
+                const candidatesCount = await contract.candidatesCount();
+                const candidatesList = document.getElementById('candidatesList');
+                const resultsList = document.getElementById('resultsList');
+                
+                // Check election status
+                const isElectionActive = await contract.isElectionActive();
+                const statusDisplay = document.getElementById('electionStatusDisplay');
+                
+                if (isElectionActive) {
+                    statusDisplay.textContent = 'ACTIVE';
+                    statusDisplay.className = 'status-indicator active';
+                } else {
+                    statusDisplay.textContent = 'INACTIVE';
+                    statusDisplay.className = 'status-indicator inactive';
+                }
+                
+                candidatesList.innerHTML = '';
+                resultsList.innerHTML = '';
+                
+                const hasVoted = await contract.checkVoted(userAddress);
+                
+                for (let i = 1; i <= candidatesCount; i++) {
+                    const candidate = await contract.getCandidate(i);
+                    
+                    const candidateCard = document.createElement('div');
+                    candidateCard.className = 'candidate-card';
+                    
+                    let buttonText = 'Vote';
+                    let buttonDisabled = false;
+                    
+                    if (hasVoted) {
+                        buttonText = 'Already Voted';
+                        buttonDisabled = true;
+                    } else if (!isElectionActive) {
+                        buttonText = 'Election Not Active';
+                        buttonDisabled = true;
+                    }
+                    
+                    candidateCard.innerHTML = `
+                        <div class="candidate-name">${candidate[1]}</div>
+                        <div class="candidate-votes">Current votes: <span class="vote-count">${candidate[2].toString()}</span></div>
+                        <button class="btn btn-vote" onclick="vote(${candidate[0].toString()})" 
+                                ${buttonDisabled ? 'disabled' : ''}>
+                            ${buttonText}
+                        </button>
+                    `;
+                    candidatesList.appendChild(candidateCard);
+                    
+                    const resultCard = document.createElement('div');
+                    resultCard.className = 'candidate-card';
+                    resultCard.innerHTML = `
+                        <div class="candidate-name">${candidate[1]}</div>
+                        <div class="vote-count">${candidate[2].toString()}</div>
+                        <div class="candidate-votes">votes</div>
+                    `;
+                    resultsList.appendChild(resultCard);
+                }
+                
+            } catch (error) {
+                alert('Error loading candidates: ' + error.message);
+            }
+        }
+        
+        async function vote(candidateId) {
+            try {
+                const tx = await contract.vote(candidateId);
+                await tx.wait();
+                alert('Vote submitted successfully!');
+                await loadCandidates();
+            } catch (error) {
+                alert('Error voting: ' + error.message);
+            }
+        }
+        
+        document.getElementById('refreshResults').addEventListener('click', function() {
+            if (contract) {
+                loadCandidates();
+            } else {
+                loadCandidatesReadOnly();
+            }
+        });
+
+        // Admin functions
+        async function loadAdminElectionStatus() {
+            try {
+                const isActive = await contract.isElectionActive();
+                const statusElement = document.getElementById('adminElectionStatus');
+                const startBtn = document.getElementById('startElection');
+                const stopBtn = document.getElementById('stopElection');
+                
+                if (isActive) {
+                    statusElement.textContent = 'ACTIVE';
+                    statusElement.className = 'status-indicator active';
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                } else {
+                    statusElement.textContent = 'INACTIVE';
+                    statusElement.className = 'status-indicator inactive';
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error loading admin election status:', error);
+            }
+        }
+
+        document.getElementById('startElection').addEventListener('click', async function() {
+            try {
+                const tx = await contract.startElection();
+                await tx.wait();
+                alert('Election started successfully!');
+                await loadAdminElectionStatus();
+                await loadCandidates(); // Refresh main view
+            } catch (error) {
+                alert('Error starting election: ' + error.message);
+            }
+        });
+
+        document.getElementById('stopElection').addEventListener('click', async function() {
+            try {
+                const tx = await contract.stopElection();
+                await tx.wait();
+                alert('Election stopped successfully!');
+                await loadAdminElectionStatus();
+                await loadCandidates(); // Refresh main view
+            } catch (error) {
+                alert('Error stopping election: ' + error.message);
+            }
+        });
+
+        document.getElementById('refreshAdminStatus').addEventListener('click', loadAdminElectionStatus);
+    </script>
+    
+    <style>
+        .account-selector {
+            margin-bottom: 15px;
+        }
+        
+        .account-selector label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .account-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .btn-vote:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .election-status-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .status-indicator.active {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .status-indicator.inactive {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .navigation {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .admin-section {
+            margin: 20px 0;
+        }
+        
+        .admin-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .election-control {
+            margin-bottom: 15px;
+        }
+        
+        .election-control h3 {
+            margin-bottom: 15px;
+        }
+        
+        .election-status {
+            margin: 15px 0;
+            font-size: 16px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-success:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .btn-danger:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</body>
+</html>
