@@ -20,11 +20,6 @@ contract ResultsAggregator {
         _;
     }
     
-    // Modifier to ensure only authorized contracts can access results
-    modifier onlyAuthorized() {
-        require(msg.sender == owner || isAuthorizedContract(msg.sender), "Not authorized");
-        _;
-    }
     
     // Mapping to track authorized contracts
     mapping(address => bool) public authorizedContracts;
@@ -45,10 +40,6 @@ contract ResultsAggregator {
         authorizedContracts[_contract] = false;
     }
     
-    // Internal function to check if address is authorized
-    function isAuthorizedContract(address _address) internal view returns (bool) {
-        return authorizedContracts[_address];
-    }
     
     // Function to get total votes cast across all candidates
     function getTotalVotes() public view returns (uint256) {

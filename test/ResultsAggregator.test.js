@@ -62,6 +62,7 @@ describe("ResultsAggregator Contract", function () {
         resultsAggregator.connect(unauthorizedUser).authorizeContract(authorizedContract.address)
       ).to.be.revertedWith("Only the owner can perform this action");
     });
+
   });
 
   describe("Total Votes Calculation", function () {

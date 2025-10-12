@@ -49,6 +49,29 @@ describe("Voting Contract Integration Tests", function () {
       expect(await electionManager.authorizedContracts(await votingCore.getAddress())).to.be.true;
       expect(await resultsAggregator.authorizedContracts(await votingCore.getAddress())).to.be.true;
     });
+
+    it("Should get all candidates through main Voting contract", async function () {
+      // Add some candidates
+      await voting.addCandidate("Alice");
+      await voting.addCandidate("Bob");
+      await voting.addCandidate("Charlie");
+      
+      // Test getAllCandidates function (covers line 62 in Voting.sol)
+      const candidates = await voting.getAllCandidates();
+      expect(candidates.length).to.equal(3);
+      expect(candidates[0][1]).to.equal("Alice");
+      expect(candidates[1][1]).to.equal("Bob");
+      expect(candidates[2][1]).to.equal("Charlie");
+      
+      // Verify the function returns the same data as calling candidateManager directly
+      const directCandidates = await candidateManager.getAllCandidates();
+      expect(candidates.length).to.equal(directCandidates.length);
+      for (let i = 0; i < candidates.length; i++) {
+        expect(candidates[i][0]).to.equal(directCandidates[i][0]); // id
+        expect(candidates[i][1]).to.equal(directCandidates[i][1]); // name
+        expect(candidates[i][2]).to.equal(directCandidates[i][2]); // voteCount
+      }
+    });
   });
 
   describe("End-to-End Voting Workflow", function () {
