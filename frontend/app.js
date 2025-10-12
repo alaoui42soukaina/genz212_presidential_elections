@@ -1,6 +1,7 @@
 // Voting DApp Application Logic
 let CONTRACT_ADDRESS = "";
 const CONTRACT_ABI = [
+    // Original functions (backward compatibility)
     "function candidatesCount() view returns (uint256)",
     "function getCandidate(uint256 _candidateId) view returns (uint256, string memory, uint256)",
     "function vote(uint256 _candidateId)",
@@ -13,7 +14,22 @@ const CONTRACT_ABI = [
     "function startElection()",
     "function endElection()",
     "function owner() view returns (address)",
-    "function currentElectionRound() view returns (uint256)"
+    "function currentElectionRound() view returns (uint256)",
+    
+    // New results and statistics functions
+    "function getWinner() view returns (uint256 candidateId, string memory name, uint256 voteCount)",
+    "function getCandidatesByVoteCount() view returns (uint256[] candidateIds, string[] names, uint256[] voteCounts)",
+    "function getDetailedResults() view returns (uint256[] candidateIds, string[] names, uint256[] voteCounts, uint256[] percentages)",
+    "function hasTie() view returns (bool)",
+    "function getTiedCandidates() view returns (uint256[])",
+    "function getVotingStats() view returns (uint256 totalCandidates, uint256 currentRound, bool isActive, uint256 totalVotes, bool hasTieResult)",
+    
+    // Contract management functions
+    "function getContractAddresses() view returns (address candidateManagerAddr, address electionManagerAddr, address votingCoreAddr, address resultsAggregatorAddr)",
+    "function candidateManager() view returns (address)",
+    "function electionManager() view returns (address)",
+    "function votingCore() view returns (address)",
+    "function resultsAggregator() view returns (address)"
 ];
 
 let ACCOUNTS = [];

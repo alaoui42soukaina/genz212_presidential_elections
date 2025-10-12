@@ -1,135 +1,185 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-contract Voting {
-    // Struct to represent a candidate
-    struct Candidate {
-        uint256 id;
-        string name;
-        uint256 voteCount;
-    }
+import "./CandidateManager.sol";
+import "./ElectionManager.sol";
+import "./VotingCore.sol";
+import "./ResultsAggregator.sol";
 
-    // Mapping to store candidates
-    mapping(uint256 => Candidate) public candidates;
-    
-    // Array to store candidate IDs
-    uint256[] public candidateIds;
-    
-    
+contract Voting {
     // Owner of the contract
     address public owner;
     
-    // Total number of candidates
-    uint256 public candidatesCount;
+    // Contract references
+    CandidateManager public candidateManager;
+    ElectionManager public electionManager;
+    VotingCore public votingCore;
+    ResultsAggregator public resultsAggregator;
     
-    // Election state
-    bool public electionActive;
-    uint256 public currentElectionRound;
-    
-    // Mapping to track which election round each voter voted in
-    mapping(address => uint256) public voterElectionRound;
-    
-    // Events
+    // Events (for backward compatibility)
     event CandidateAdded(uint256 indexed candidateId, string name);
     event VoteCast(address indexed voter, uint256 indexed candidateId);
     event ElectionStarted(uint256 indexed round);
     event ElectionStopped();
     
-    // Modifier to ensure only owner can add candidates
+    // Modifier to ensure only owner can perform admin functions
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
     
-    // Constructor
     constructor() {
         owner = msg.sender;
-        candidatesCount = 0;
-        electionActive = false;
-        currentElectionRound = 0;
+        
+        // Deploy all sub-contracts
+        candidateManager = new CandidateManager();
+        electionManager = new ElectionManager();
+        votingCore = new VotingCore(address(candidateManager), address(electionManager));
+        resultsAggregator = new ResultsAggregator(address(candidateManager));
+        
+        // Set up cross-contract authorizations
+        candidateManager.authorizeContract(address(votingCore));
+        candidateManager.authorizeContract(address(resultsAggregator));
+        electionManager.authorizeContract(address(votingCore));
+        resultsAggregator.authorizeContract(address(votingCore));
     }
+    
+    // ========== CANDIDATE MANAGEMENT ==========
     
     // Function to add a candidate (only owner)
     function addCandidate(string memory _name) public onlyOwner {
-        candidatesCount++;
-        candidates[candidatesCount] = Candidate(candidatesCount, _name, 0);
-        candidateIds.push(candidatesCount);
-        emit CandidateAdded(candidatesCount, _name);
-    }
-    
-    // Function to vote for a candidate
-    function vote(uint256 _candidateId) public {
-        require(electionActive, "Election is not active");
-        require(_candidateId > 0 && _candidateId <= candidatesCount, "Invalid candidate ID");
-        require(voterElectionRound[msg.sender] != currentElectionRound, "You have already voted in this election");
-        
-        voterElectionRound[msg.sender] = currentElectionRound;
-        candidates[_candidateId].voteCount++;
-        
-        emit VoteCast(msg.sender, _candidateId);
+        candidateManager.addCandidate(_name);
+        emit CandidateAdded(candidateManager.getCandidatesCount(), _name);
     }
     
     // Function to get candidate details
     function getCandidate(uint256 _candidateId) public view returns (uint256, string memory, uint256) {
-        require(_candidateId > 0 && _candidateId <= candidatesCount, "Invalid candidate ID");
-        Candidate memory candidate = candidates[_candidateId];
-        return (candidate.id, candidate.name, candidate.voteCount);
+        return candidateManager.getCandidate(_candidateId);
     }
     
     // Function to get all candidates
-    function getAllCandidates() public view returns (Candidate[] memory) {
-        Candidate[] memory allCandidates = new Candidate[](candidatesCount);
-        
-        for (uint256 i = 0; i < candidatesCount; i++) {
-            allCandidates[i] = candidates[i + 1];
-        }
-        
-        return allCandidates;
+    function getAllCandidates() public view returns (CandidateManager.Candidate[] memory) {
+        return candidateManager.getAllCandidates();
+    }
+    
+    // Function to get candidates count
+    function candidatesCount() public view returns (uint256) {
+        return candidateManager.getCandidatesCount();
+    }
+    
+    // ========== VOTING FUNCTIONALITY ==========
+    
+    // Function to vote for a candidate
+    function vote(uint256 _candidateId) public {
+        votingCore.vote(_candidateId, msg.sender);
+        emit VoteCast(msg.sender, _candidateId);
     }
     
     // Function to check if an address has voted in current election
     function checkVoted(address _voter) public view returns (bool) {
-        return voterElectionRound[_voter] == currentElectionRound;
+        return votingCore.checkVoted(_voter);
     }
     
-    // Function to get total votes cast
-    function getTotalVotes() public view returns (uint256) {
-        uint256 total = 0;
-        for (uint256 i = 1; i <= candidatesCount; i++) {
-            total += candidates[i].voteCount;
-        }
-        return total;
-    }
+    // ========== ELECTION MANAGEMENT ==========
     
-    // Function to get total number of voters
-    function getTotalVoters() public view returns (uint256) {
-        return getTotalVotes(); // Same as total votes since each voter can only vote once
-    }
-    
-    // Admin functions to control election state
+    // Function to start election (only owner)
     function startElection() public onlyOwner {
-        require(!electionActive, "Election is already active");
-        
-        // Reset all vote data
-        for (uint256 i = 1; i <= candidatesCount; i++) {
-            candidates[i].voteCount = 0;
-        }
-        
-        // Start new election round (this effectively resets all voter records)
-        currentElectionRound++;
-        
-        electionActive = true;
-        emit ElectionStarted(currentElectionRound);
+        // Reset vote counts before starting new election
+        votingCore.resetVotingData();
+        electionManager.startElection();
+        emit ElectionStarted(electionManager.getCurrentElectionRound());
     }
     
+    // Function to end election (only owner)
     function endElection() public onlyOwner {
-        require(electionActive, "Election is not active");
-        electionActive = false;
+        electionManager.endElection();
         emit ElectionStopped();
     }
     
     // Function to check election status
     function isElectionActive() public view returns (bool) {
-        return electionActive;
+        return votingCore.isElectionActive();
+    }
+    
+    // Function to get current election round
+    function currentElectionRound() public view returns (uint256) {
+        return votingCore.getCurrentElectionRound();
+    }
+    
+    // ========== RESULTS AND STATISTICS ==========
+    
+    // Function to get total votes cast
+    function getTotalVotes() public view returns (uint256) {
+        return resultsAggregator.getTotalVotes();
+    }
+    
+    // Function to get total number of voters
+    function getTotalVoters() public view returns (uint256) {
+        return resultsAggregator.getTotalVoters();
+    }
+    
+    // Function to get winner
+    function getWinner() public view returns (uint256 candidateId, string memory name, uint256 voteCount) {
+        return resultsAggregator.getWinner();
+    }
+    
+    // Function to get candidates sorted by vote count
+    function getCandidatesByVoteCount() public view returns (
+        uint256[] memory candidateIds,
+        string[] memory names,
+        uint256[] memory voteCounts
+    ) {
+        return resultsAggregator.getCandidatesByVoteCount();
+    }
+    
+    // Function to get detailed results
+    function getDetailedResults() public view returns (
+        uint256[] memory candidateIds,
+        string[] memory names,
+        uint256[] memory voteCounts,
+        uint256[] memory percentages
+    ) {
+        return resultsAggregator.getDetailedResults();
+    }
+    
+    // Function to check if there's a tie
+    function hasTie() public view returns (bool) {
+        return resultsAggregator.hasTie();
+    }
+    
+    // Function to get tied candidates
+    function getTiedCandidates() public view returns (uint256[] memory) {
+        return resultsAggregator.getTiedCandidates();
+    }
+    
+    // ========== ADMIN FUNCTIONS ==========
+    
+    // Function to get contract addresses (for debugging/admin)
+    function getContractAddresses() public view returns (
+        address candidateManagerAddr,
+        address electionManagerAddr,
+        address votingCoreAddr,
+        address resultsAggregatorAddr
+    ) {
+        return (
+            address(candidateManager),
+            address(electionManager),
+            address(votingCore),
+            address(resultsAggregator)
+        );
+    }
+    
+    // Function to get comprehensive voting statistics
+    function getVotingStats() public view returns (
+        uint256 totalCandidates,
+        uint256 currentRound,
+        bool isActive,
+        uint256 totalVotes,
+        bool hasTieResult
+    ) {
+        (totalCandidates, currentRound, isActive, totalVotes) = votingCore.getVotingStats();
+        hasTieResult = resultsAggregator.hasTie();
+        
+        return (totalCandidates, currentRound, isActive, totalVotes, hasTieResult);
     }
 }
