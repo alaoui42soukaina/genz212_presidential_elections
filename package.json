@@ -8,11 +8,14 @@
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.js --network localhost",
     "node": "hardhat node",
-    "start": "hardhat node & npm run deploy",
+    "frontend": "node serve.js",
+    "dev": "concurrently \"npm run node\" \"npm run deploy\" \"npm run frontend\"",
+    "start": "npm run dev",
     "stop": "pkill -f 'hardhat node'"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "concurrently": "^9.2.1",
     "hardhat": "^2.19.0"
   },
   "dependencies": {

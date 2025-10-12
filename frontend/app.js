@@ -21,6 +21,7 @@ let ACCOUNTS = [];
 let provider, signer, contract, userAddress;
 let readOnlyProvider, readOnlyContract;
 let CANDIDATES_CONFIG = { candidates: [] };
+let NETWORK_CONFIG;
 
 // Load deployment info (contract address)
 async function loadDeploymentInfo() {
@@ -71,22 +72,63 @@ async function loadConfig() {
     }
 }
 
+// Load network config
+async function loadNetworkConfig() {
+    try {
+        const response = await fetch('../config/network.json');
+        NETWORK_CONFIG = await response.json();
+        console.log('Loaded network config:', NETWORK_CONFIG);
+    } catch (error) {
+        console.error('Failed to load network config.', error);
+    }
+}
+
 // Initialize read-only connection on page load
 async function initializeReadOnly() {
     try {
         await loadDeploymentInfo();
         await loadAccounts();
         await loadConfig();
+        await loadNetworkConfig();
         
         if (!CONTRACT_ADDRESS) {
             throw new Error('No contract address available');
         }
         
-        readOnlyProvider = new ethers.JsonRpcProvider(process.env.SERVER_ADRESS);
+        if (!NETWORK_CONFIG || !NETWORK_CONFIG.rpcUrl) {
+            throw new Error('Network configuration not available');
+        }
+        
+        readOnlyProvider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
         readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, readOnlyProvider);
+        
+        // Test the connection by trying to get the owner
+        try {
+            await readOnlyContract.owner();
+        } catch (testError) {
+            console.error('Contract connection test failed:', testError);
+            throw new Error('Cannot connect to contract. Make sure the local blockchain is running.');
+        }
+        
         await loadCandidatesReadOnly();
     } catch (error) {
-        console.log('Read-only connection failed:', error.message);
+        console.error('Read-only connection failed:', error.message);
+        // Show a user-friendly message
+        const candidatesList = document.getElementById('candidatesList');
+        if (candidatesList) {
+            candidatesList.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #666;">
+                    <h3>Connection Error</h3>
+                    <p>${error.message}</p>
+                    <p>Please make sure:</p>
+                    <ul style="text-align: left; display: inline-block;">
+                        <li>The local blockchain is running (npx hardhat node)</li>
+                        <li>The contract is deployed</li>
+                        <li>You refresh the page</li>
+                    </ul>
+                </div>
+            `;
+        }
     }
 }
 
@@ -141,14 +183,32 @@ document.getElementById('connectAccount').addEventListener('click', async functi
         const accountId = parseInt(document.getElementById('accountSelect').value);
         const selectedAccount = ACCOUNTS.find(acc => acc.id === accountId);
         
-        provider = new ethers.JsonRpcProvider(process.env.SERVER_ADRESS);
+        if (!selectedAccount) {
+            throw new Error('Selected account not found');
+        }
+        
+        if (!CONTRACT_ADDRESS) {
+            throw new Error('Contract address not loaded. Please refresh the page.');
+        }
+        
+        if (!NETWORK_CONFIG || !NETWORK_CONFIG.rpcUrl) {
+            throw new Error('Network configuration not loaded. Please refresh the page.');
+        }
+        
+        provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
         signer = new ethers.Wallet(selectedAccount.privateKey, provider);
         userAddress = selectedAccount.address;
         contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
         
-        // Check if user is the owner
-        const owner = await contract.owner();
-        const isOwner = owner.toLowerCase() === userAddress.toLowerCase();
+        // Test connection by checking if we can get the owner
+        let isOwner = false;
+        try {
+            const owner = await contract.owner();
+            isOwner = owner.toLowerCase() === userAddress.toLowerCase();
+        } catch (ownerError) {
+            console.error('Error checking contract owner:', ownerError);
+            throw new Error('Failed to connect to contract. Make sure the local blockchain is running and the contract is deployed.');
+        }
         
         document.getElementById('accountAddress').textContent = 
             `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
@@ -168,6 +228,7 @@ document.getElementById('connectAccount').addEventListener('click', async functi
         await loadCandidates();
         
     } catch (error) {
+        console.error('Connection error details:', error);
         alert('Connection error: ' + error.message);
     }
 });
