@@ -15,8 +15,6 @@ contract Voting {
     // Array to store candidate IDs
     uint256[] public candidateIds;
     
-    // Mapping to track who has voted
-    mapping(address => bool) public hasVoted;
     
     // Owner of the contract
     address public owner;
@@ -26,11 +24,15 @@ contract Voting {
     
     // Election state
     bool public electionActive;
+    uint256 public currentElectionRound;
+    
+    // Mapping to track which election round each voter voted in
+    mapping(address => uint256) public voterElectionRound;
     
     // Events
     event CandidateAdded(uint256 indexed candidateId, string name);
     event VoteCast(address indexed voter, uint256 indexed candidateId);
-    event ElectionStarted();
+    event ElectionStarted(uint256 indexed round);
     event ElectionStopped();
     
     // Modifier to ensure only owner can add candidates
@@ -44,6 +46,7 @@ contract Voting {
         owner = msg.sender;
         candidatesCount = 0;
         electionActive = false;
+        currentElectionRound = 0;
     }
     
     // Function to add a candidate (only owner)
@@ -58,9 +61,9 @@ contract Voting {
     function vote(uint256 _candidateId) public {
         require(electionActive, "Election is not active");
         require(_candidateId > 0 && _candidateId <= candidatesCount, "Invalid candidate ID");
-        require(!hasVoted[msg.sender], "You have already voted");
+        require(voterElectionRound[msg.sender] != currentElectionRound, "You have already voted in this election");
         
-        hasVoted[msg.sender] = true;
+        voterElectionRound[msg.sender] = currentElectionRound;
         candidates[_candidateId].voteCount++;
         
         emit VoteCast(msg.sender, _candidateId);
@@ -84,9 +87,9 @@ contract Voting {
         return allCandidates;
     }
     
-    // Function to check if an address has voted
+    // Function to check if an address has voted in current election
     function checkVoted(address _voter) public view returns (bool) {
-        return hasVoted[_voter];
+        return voterElectionRound[_voter] == currentElectionRound;
     }
     
     // Function to get total votes cast
@@ -98,14 +101,28 @@ contract Voting {
         return total;
     }
     
+    // Function to get total number of voters
+    function getTotalVoters() public view returns (uint256) {
+        return getTotalVotes(); // Same as total votes since each voter can only vote once
+    }
+    
     // Admin functions to control election state
     function startElection() public onlyOwner {
         require(!electionActive, "Election is already active");
+        
+        // Reset all vote data
+        for (uint256 i = 1; i <= candidatesCount; i++) {
+            candidates[i].voteCount = 0;
+        }
+        
+        // Start new election round (this effectively resets all voter records)
+        currentElectionRound++;
+        
         electionActive = true;
-        emit ElectionStarted();
+        emit ElectionStarted(currentElectionRound);
     }
     
-    function stopElection() public onlyOwner {
+    function endElection() public onlyOwner {
         require(electionActive, "Election is not active");
         electionActive = false;
         emit ElectionStopped();
