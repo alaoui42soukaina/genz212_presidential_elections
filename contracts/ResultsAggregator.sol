@@ -74,7 +74,7 @@ contract ResultsAggregator {
         require(candidatesCount > 0, "No candidates available");
         
         uint256 maxVotes = 0;
-        uint256 winnerId = 0;
+        uint256 winnerId = 1; // Default to first candidate
         string memory winnerName = "";
         
         for (uint256 i = 1; i <= candidatesCount; i++) {
@@ -84,6 +84,11 @@ contract ResultsAggregator {
                 winnerId = i;
                 winnerName = candidateName;
             }
+        }
+        
+        // If no votes were found, return first candidate
+        if (bytes(winnerName).length == 0) {
+            (, winnerName, ) = candidateManager.getCandidate(1);
         }
         
         return (winnerId, winnerName, maxVotes);
@@ -210,6 +215,11 @@ contract ResultsAggregator {
             if (votes == maxVotes && votes > 0) {
                 tieCount++;
             }
+        }
+        
+        // Only return tied candidates if there's actually a tie (more than 1 candidate with max votes)
+        if (tieCount <= 1) {
+            return new uint256[](0);
         }
         
         // Third pass: collect tied candidates

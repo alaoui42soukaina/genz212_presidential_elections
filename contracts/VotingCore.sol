@@ -75,8 +75,24 @@ contract VotingCore {
     }
     
     // Convenience function for direct voting (for backward compatibility)
-    function vote(uint256 _candidateId) public {
-        vote(_candidateId, msg.sender);
+    function voteDirect(uint256 _candidateId) public {
+        // Check if election is active
+        require(electionManager.isElectionActive(), "Election is not active");
+        
+        // Check if candidate exists
+        require(candidateManager.candidateExists(_candidateId), "Invalid candidate ID");
+        
+        // Check if voter can vote (hasn't voted in current round)
+        require(electionManager.canVote(msg.sender), "You have already voted in this election");
+        
+        // Register the voter for current election round
+        electionManager.registerVoter(msg.sender);
+        
+        // Increment candidate vote count
+        candidateManager.incrementCandidateVoteCount(_candidateId);
+        
+        // Emit vote event
+        emit VoteCast(msg.sender, _candidateId, electionManager.getCurrentElectionRound());
     }
     
     // Function to check if an address has voted in current election
