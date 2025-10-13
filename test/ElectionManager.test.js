@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { deployContract } = require("./helpers/testHelpers");
 
 describe("ElectionManager Contract", function () {
   let electionManager;
@@ -12,9 +13,7 @@ describe("ElectionManager Contract", function () {
   beforeEach(async function () {
     [owner, authorizedContract, unauthorizedUser, voter1, voter2] = await ethers.getSigners();
     
-    const ElectionManager = await ethers.getContractFactory("ElectionManager");
-    electionManager = await ElectionManager.deploy();
-    await electionManager.waitForDeployment();
+    electionManager = await deployContract("ElectionManager");
   });
 
   describe("Deployment", function () {

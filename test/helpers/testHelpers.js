@@ -2,6 +2,8 @@
  * Test Helpers for Voting Contract
  */
 
+const { ethers } = require("hardhat");
+
 /**
  * Deploy a contract and return the instance
  */

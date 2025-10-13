@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { deployContract } = require("./helpers/testHelpers");
 
 describe("CandidateManager Contract", function () {
   let candidateManager;
@@ -10,9 +11,7 @@ describe("CandidateManager Contract", function () {
   beforeEach(async function () {
     [owner, authorizedContract, unauthorizedUser] = await ethers.getSigners();
     
-    const CandidateManager = await ethers.getContractFactory("CandidateManager");
-    candidateManager = await CandidateManager.deploy();
-    await candidateManager.waitForDeployment();
+    candidateManager = await deployContract("CandidateManager");
   });
 
   describe("Deployment", function () {

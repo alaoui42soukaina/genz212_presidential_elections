@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { addCandidates, startElection, setupElectionWithCandidates, castVotes } = require("./helpers/testHelpers");
+const { deployContract, addCandidates, startElection, setupElectionWithCandidates, castVotes } = require("./helpers/testHelpers");
 
 describe("Voting Contract Integration Tests", function () {
   this.timeout(30000);
@@ -19,9 +19,7 @@ describe("Voting Contract Integration Tests", function () {
     this.timeout(10000);
     [owner, voter1, voter2, voter3] = await ethers.getSigners();
     
-    const Voting = await ethers.getContractFactory("Voting");
-    voting = await Voting.deploy();
-    await voting.waitForDeployment();
+    voting = await deployContract("Voting");
     
     // Get references to sub-contracts for integration testing
     candidateManager = await ethers.getContractAt("CandidateManager", await voting.candidateManager());

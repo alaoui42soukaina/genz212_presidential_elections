@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { deployContract } = require("./helpers/testHelpers");
 
 describe("VotingCore Contract", function () {
   let votingCore;
@@ -15,21 +16,14 @@ describe("VotingCore Contract", function () {
     [owner, authorizedContract, unauthorizedUser, voter1, voter2] = await ethers.getSigners();
     
     // Deploy sub-contracts
-    const CandidateManager = await ethers.getContractFactory("CandidateManager");
-    candidateManager = await CandidateManager.deploy();
-    await candidateManager.waitForDeployment();
-    
-    const ElectionManager = await ethers.getContractFactory("ElectionManager");
-    electionManager = await ElectionManager.deploy();
-    await electionManager.waitForDeployment();
+    candidateManager = await deployContract("CandidateManager");
+    electionManager = await deployContract("ElectionManager");
     
     // Deploy VotingCore
-    const VotingCore = await ethers.getContractFactory("VotingCore");
-    votingCore = await VotingCore.deploy(
+    votingCore = await deployContract("VotingCore", [
       await candidateManager.getAddress(),
       await electionManager.getAddress()
-    );
-    await votingCore.waitForDeployment();
+    ]);
     
     // Set up authorizations
     await candidateManager.authorizeContract(await votingCore.getAddress());
@@ -274,13 +268,8 @@ describe("VotingCore Contract", function () {
 
     it("Should allow owner to update contract references", async function () {
       // Deploy new contracts
-      const NewCandidateManager = await ethers.getContractFactory("CandidateManager");
-      const newCandidateManager = await NewCandidateManager.deploy();
-      await newCandidateManager.waitForDeployment();
-      
-      const NewElectionManager = await ethers.getContractFactory("ElectionManager");
-      const newElectionManager = await NewElectionManager.deploy();
-      await newElectionManager.waitForDeployment();
+      const newCandidateManager = await deployContract("CandidateManager");
+      const newElectionManager = await deployContract("ElectionManager");
       
       // Update references
       await votingCore.updateCandidateManager(await newCandidateManager.getAddress());

@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { deployContract } = require("./helpers/testHelpers");
 
 describe("ResultsAggregator Contract", function () {
   let resultsAggregator;
@@ -12,14 +13,12 @@ describe("ResultsAggregator Contract", function () {
     [owner, authorizedContract, unauthorizedUser] = await ethers.getSigners();
     
     // Deploy CandidateManager
-    const CandidateManager = await ethers.getContractFactory("CandidateManager");
-    candidateManager = await CandidateManager.deploy();
-    await candidateManager.waitForDeployment();
+    candidateManager = await deployContract("CandidateManager");
     
     // Deploy ResultsAggregator
-    const ResultsAggregator = await ethers.getContractFactory("ResultsAggregator");
-    resultsAggregator = await ResultsAggregator.deploy(await candidateManager.getAddress());
-    await resultsAggregator.waitForDeployment();
+    resultsAggregator = await deployContract("ResultsAggregator", [
+      await candidateManager.getAddress()
+    ]);
     
     // Add some candidates
     await candidateManager.addCandidate("Alice");
