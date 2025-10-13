@@ -19,6 +19,7 @@ module.exports = {
   },
   mocha: {
     reporter: 'mochawesome',
+    parallel: true,
     reporterOptions: {
       reportDir: './test-results',
       reportFilename: 'mochawesome-report',
