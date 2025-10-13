@@ -23,3 +23,6 @@ npm-debug.log*
 # Deployment info
 config/deployment.json
 
+#Playwright
+playwright-report/
+test-results/
