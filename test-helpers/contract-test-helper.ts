@@ -106,7 +106,8 @@ export class ContractTestHelper {
     txPromise: Promise<any>,
     contract: any,
     eventName: string,
-    expectedArgs?: any[]
+    expectedArgs?: any[],
+    customMessage?: string
   ): Promise<void> {
     const tx = await txPromise;
     const receipt = await tx.wait();
@@ -120,23 +121,27 @@ export class ContractTestHelper {
       }
     });
 
-    expect(event, `Event ${eventName} should be emitted`).toBeTruthy();
+    const message = customMessage || `Event ${eventName} should be emitted`;
+    expect(event, message).toBeTruthy();
     
     if (expectedArgs && event) {
       const parsedLog = contract.interface.parseLog(event);
       // Convert BigInt values to numbers for comparison
       const convertedArgs = this.convertBigIntToNumber(parsedLog.args);
-      expect(convertedArgs, `Event ${eventName} should have correct arguments`).toEqual(expectedArgs);
+      const argsMessage = customMessage || `Event ${eventName} should have correct arguments`;
+      expect(convertedArgs, argsMessage).toEqual(expectedArgs);
     }
   }
 
-  static async expectRevert(txPromise: Promise<any>, expectedMessage?: string): Promise<void> {
+  static async expectRevert(txPromise: Promise<any>, expectedMessage?: string, customMessage?: string): Promise<void> {
     try {
       await txPromise;
-      expect(false).toBeTruthy();
+      const message = customMessage || "Transaction should have reverted";
+      expect(false, message).toBeTruthy();
     } catch (error: any) {
       if (expectedMessage) {
-        expect(error.message).toContain(expectedMessage);
+        const revertMessage = customMessage || `Transaction should revert with message containing: ${expectedMessage}`;
+        expect(error.message, revertMessage).toContain(expectedMessage);
       }
     }
   }
