@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { deployContract, addCandidates } = require("./helpers/testHelpers");
+const { deployContract, addCandidates } = require("../helpers/testHelpers");
 
 describe("CandidateManager Contract", function () {
   let candidateManager;
