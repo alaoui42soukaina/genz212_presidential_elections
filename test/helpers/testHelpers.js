@@ -2,7 +2,7 @@
  * Test Helpers for Voting Contract
  */
 
-const { ethers } = require("hardhat");
+const { ethers } = require('hardhat');
 
 /**
  * Deploy a contract and return the instance
@@ -53,5 +53,5 @@ module.exports = {
   addCandidates,
   startElection,
   setupElectionWithCandidates,
-  castVotes
+  castVotes,
 };

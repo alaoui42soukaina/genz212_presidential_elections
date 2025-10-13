@@ -17,14 +17,24 @@
     "frontend": "node serve.js",
     "dev": "concurrently \"npm run node\" \"npm run deploy\" \"npm run frontend\"",
     "start": "npm run dev",
-    "stop": "pkill -f 'hardhat node'"
+    "stop": "pkill -f 'hardhat node'",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:test": "prettier --check test/",
+    "format:test:write": "prettier --write test/"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "concurrently": "^9.2.1",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^4.2.1",
     "hardhat": "^2.19.0",
     "mocha-multi-reporters": "^1.5.1",
-    "mochawesome": "^7.1.4"
+    "mochawesome": "^7.1.4",
+    "prettier": "^3.6.2"
   },
   "dependencies": {
     "ethers": "^6.8.0"

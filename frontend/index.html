@@ -1,80 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Voting DApp</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <h1>🗳️ GENZ212 Presidential Elections 2025 🇲🇦</h1>
-            <p>A decentralized voting application</p>
-        </header>
+      <header>
+        <h1>🗳️ GENZ212 Presidential Elections 2025 🇲🇦</h1>
+        <p>A decentralized voting application</p>
+      </header>
 
-        <div class="wallet-section">
-            <div class="account-selector">
-                <label for="accountSelect">Select Account:</label>
-                <select id="accountSelect" class="btn btn-secondary">
-                    <!-- Accounts will be loaded dynamically -->
-                </select>
-            </div>
-            
-            <button id="connectAccount" class="btn btn-primary">Connect Account</button>
-            
-            <div id="accountInfo" class="wallet-info" style="display: none;">
-                <p>Connected: <span id="accountAddress"></span></p>
-                <p>Account: <span id="accountNumber"></span></p>
-                <button id="disconnectAccount" class="btn btn-danger">Disconnect</button>
-            </div>
+      <div class="wallet-section">
+        <div class="account-selector">
+          <label for="accountSelect">Select Account:</label>
+          <select id="accountSelect" class="btn btn-secondary">
+            <!-- Accounts will be loaded dynamically -->
+          </select>
         </div>
 
-        <div class="admin-section" id="adminSection" style="display: none;">
-            <div class="admin-container">
-                <h2>🔧 Election Control</h2>
-                <div class="election-status">
-                    <p>Current Status: <span id="adminElectionStatus" class="status-indicator">Loading...</span></p>
-                </div>
-                <div class="control-buttons">
-                    <button id="startElection" class="btn btn-success" disabled>Start Election</button>
-                    <button id="endElection" class="btn btn-danger" disabled>End Election</button>
-                </div>
-            </div>
-        </div>
+        <button id="connectAccount" class="btn btn-primary">
+          Connect Account
+        </button>
 
-        <div class="voting-section">
-            <h2>Candidates</h2>
-            <div class="election-status-display">
-                <p>Election Status: <span id="electionStatusDisplay" class="status-indicator">Loading...</span></p>
-            </div>
-            <div id="candidatesList" class="candidates-grid">
-                <!-- Candidates will be loaded here -->
-            </div>
+        <div id="accountInfo" class="wallet-info" style="display: none">
+          <p>Connected: <span id="accountAddress"></span></p>
+          <p>Account: <span id="accountNumber"></span></p>
+          <button id="disconnectAccount" class="btn btn-danger">
+            Disconnect
+          </button>
         </div>
+      </div>
 
-        <div class="voter-stats-section">
-            <div class="stats-container">
-                <h2>Voting Statistics</h2>
-                <div class="stat-card">
-                    <h3>Total Voters</h3>
-                    <div class="stat-number" id="totalVoters">0</div>
-                    <p>Registered Accounts: 20</p>
-                </div>
-            </div>
-            <button id="refreshStats" class="btn btn-secondary">Refresh Stats</button>
+      <div class="admin-section" id="adminSection" style="display: none">
+        <div class="admin-container">
+          <h2>🔧 Election Control</h2>
+          <div class="election-status">
+            <p>
+              Current Status:
+              <span id="adminElectionStatus" class="status-indicator"
+                >Loading...</span
+              >
+            </p>
+          </div>
+          <div class="control-buttons">
+            <button id="startElection" class="btn btn-success" disabled>
+              Start Election
+            </button>
+            <button id="endElection" class="btn btn-danger" disabled>
+              End Election
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div class="results-section" id="resultsSection" style="display: none;">
-            <h2>🏆 Final Results</h2>
-            <div id="resultsList" class="results-grid">
-                <!-- Results will be displayed here -->
-            </div>
+      <div class="voting-section">
+        <h2>Candidates</h2>
+        <div class="election-status-display">
+          <p>
+            Election Status:
+            <span id="electionStatusDisplay" class="status-indicator"
+              >Loading...</span
+            >
+          </p>
         </div>
+        <div id="candidatesList" class="candidates-grid">
+          <!-- Candidates will be loaded here -->
+        </div>
+      </div>
 
+      <div class="voter-stats-section">
+        <div class="stats-container">
+          <h2>Voting Statistics</h2>
+          <div class="stat-card">
+            <h3>Total Voters</h3>
+            <div class="stat-number" id="totalVoters">0</div>
+            <p>Registered Accounts: 20</p>
+          </div>
+        </div>
+        <button id="refreshStats" class="btn btn-secondary">
+          Refresh Stats
+        </button>
+      </div>
+
+      <div class="results-section" id="resultsSection" style="display: none">
+        <h2>🏆 Final Results</h2>
+        <div id="resultsList" class="results-grid">
+          <!-- Results will be displayed here -->
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
     <script src="app.js"></script>
-</body>
+  </body>
 </html>

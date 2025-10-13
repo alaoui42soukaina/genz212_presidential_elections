@@ -1,21 +1,21 @@
-require("@nomicfoundation/hardhat-toolbox");
+require('@nomicfoundation/hardhat-toolbox');
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.19",
+  solidity: '0.8.19',
   networks: {
     hardhat: {
-      chainId: 1337
+      chainId: 1337,
     },
     localhost: {
-      url: "http://127.0.0.1:8545"
-    }
+      url: 'http://127.0.0.1:8545',
+    },
   },
   paths: {
-    sources: "./contracts",
-    tests: "./test",
-    cache: "./cache",
-    artifacts: "./artifacts"
+    sources: './contracts',
+    tests: './test',
+    cache: './cache',
+    artifacts: './artifacts',
   },
   mocha: {
     reporter: 'mochawesome',
@@ -32,7 +32,7 @@ module.exports = {
       html: true,
       json: true,
       overwrite: true,
-      timestamp: 'longDate'
-    }
-  }
+      timestamp: 'longDate',
+    },
+  },
 };

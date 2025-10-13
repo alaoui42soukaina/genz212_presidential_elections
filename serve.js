@@ -10,6 +10,6 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 app.use('/config', express.static(path.join(__dirname, 'config')));
 
 app.listen(PORT, () => {
-    console.log(`Frontend server running at http://localhost:${PORT}`);
-    console.log('Make sure your Hardhat node is running on port 8545');
+  console.log(`Frontend server running at http://localhost:${PORT}`);
+  console.log('Make sure your Hardhat node is running on port 8545');
 });
