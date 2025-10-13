@@ -44,10 +44,10 @@ jobs:
         run: "npm run test -- --grep '@unit'"
 
       - name: 'Run integration tests'
-        run: npx hardhat test --grep "@integration(?!.*@fail)"
+        run: npx hardhat test --grep "@integration"
 
       - name: 'Run e2e tests'
-        run: npx hardhat test --grep "@e2e(?!.*@fail)"
+        run: npx hardhat test --grep "@e2e"
 
       - name: 'Generate test coverage report'
         run: 'npm run test:coverage'

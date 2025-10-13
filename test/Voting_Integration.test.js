@@ -13,7 +13,6 @@ describe('Voting Contract Integration Tests', function () {
   let electionManager;
   let votingCore;
   let resultsAggregator;
-  let owner;
   let voter1;
   let voter2;
   let voter3;
@@ -43,7 +42,7 @@ describe('Voting Contract Integration Tests', function () {
   });
 
   describe('Contract Integration Deployment', function () {
-    it('Should deploy and connect all contracts correctly @pass @integration', async function () {
+    it('Should deploy and connect all contracts correctly @integration', async function () {
       const addresses = await voting.getContractAddresses();
 
       // Verify all contracts are deployed
@@ -83,7 +82,7 @@ describe('Voting Contract Integration Tests', function () {
       ).to.equal(await resultsAggregator.getAddress());
     });
 
-    it('Should have proper cross-contract authorizations @pass @integration', async function () {
+    it('Should have proper cross-contract authorizations @integration', async function () {
       // Check that VotingCore is authorized to interact with other contracts
       expect(
         await candidateManager.authorizedContracts(
@@ -111,7 +110,7 @@ describe('Voting Contract Integration Tests', function () {
       await setupElectionWithCandidates(voting, ['Alice', 'Bob']);
     });
 
-    it('Should maintain consistent data across all contracts @pass @integration', async function () {
+    it('Should maintain consistent data across all contracts @integration', async function () {
       await castVotes(voting, [
         { voter: voter1, candidateId: 1 },
         { voter: voter2, candidateId: 2 },
@@ -152,12 +151,12 @@ describe('Voting Contract Integration Tests', function () {
       ).to.equal(await electionManager.hasVotedInCurrentRound(voter1.address));
     });
 
-    it('Should synchronize vote counts across contracts @fail @integration', async function () {
+    it('Should synchronize vote counts across contracts @integration', async function () {
       const numberOfVotes = 1;
       await voting.connect(voter1).vote(numberOfVotes);
 
       // Check vote counts are synchronized
-      const totalVotesMain = (await voting.getTotalVotes()) + 1n; // injected bug, correction : await voting.getTotalVotes();
+      const totalVotesMain = (await voting.getTotalVotes());
       const totalVotesResults = await resultsAggregator.getTotalVotes();
 
       try {
@@ -183,7 +182,7 @@ describe('Voting Contract Integration Tests', function () {
   });
 
   describe('End-to-End Voting Workflow', function () {
-    it('Should complete full voting cycle @pass @e2e', async function () {
+    it('Should complete full voting cycle @e2e', async function () {
       // 1. Add candidates
       const addedCandidates = ['Alice', 'Bob', 'Charlie'];
       let candidateCount = 1;
@@ -290,7 +289,7 @@ describe('Voting Contract Integration Tests', function () {
   });
 
   describe('Error Handling and Edge Cases', function () {
-    it('Should prohibit voting before election starts @pass @integration', async function () {
+    it('Should prohibit voting before election starts @integration', async function () {
       await addCandidates(voting, ['Alice']);
 
       await expect(voting.connect(voter1).vote(1)).to.be.revertedWith(
@@ -298,7 +297,7 @@ describe('Voting Contract Integration Tests', function () {
       );
     });
 
-    it('Should prohibit voting after election ends @pass @integration', async function () {
+    it('Should prohibit voting after election ends @integration', async function () {
       await setupElectionWithCandidates(voting, ['Alice']);
       await voting.endElection();
 
@@ -307,8 +306,8 @@ describe('Voting Contract Integration Tests', function () {
       );
     });
 
-    it('Should prohibit voting for invalid candidate IDs @fail @integration', async function () {
-      const invalidCandidateIds = [0, 1]; // injected bug, correction : const invalidCandidateIds = [0, 2];
+    it('Should prohibit voting for invalid candidate IDs @integration', async function () {
+      const invalidCandidateIds = [0, 2];
       await setupElectionWithCandidates(voting, ['Alice']);
 
       for (const candidateID of invalidCandidateIds) {
@@ -326,7 +325,7 @@ describe('Voting Contract Integration Tests', function () {
       }
     });
 
-    it('Should prohibit double voting @pass @integration', async function () {
+    it('Should prohibit double voting @integration', async function () {
       await setupElectionWithCandidates(voting, ['Alice', 'Bob']);
 
       await voting.connect(voter1).vote(1);
@@ -336,25 +335,17 @@ describe('Voting Contract Integration Tests', function () {
       );
     });
 
-    it('Should not allow non-owner to start election @pass @integration', async function () {
+    it('Should not allow non-owner to start election @integration', async function () {
       await expect(voting.connect(voter1).startElection()).to.be.revertedWith(
         'Only the owner can perform this action'
       );
     });
 
-    it('Should not allow non-owner to end election @pass @integration', async function () {
+    it('Should not allow non-owner to end election @integration', async function () {
       await setupElectionWithCandidates(voting, ['Alice']);
       await expect(voting.connect(voter1).endElection()).to.be.revertedWith(
         'Only the owner can perform this action'
       );
-    });
-
-    it('Should not allow owner to end election @fail @integration', async function () {
-      await setupElectionWithCandidates(voting, ['Alice']);
-      await expect(
-        //injected bug, correction : connect(voter1)
-        voting.connect(owner).endElection()
-      ).to.be.revertedWith('Only the owner can perform this action');
     });
   });
 });
