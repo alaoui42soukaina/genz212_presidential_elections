@@ -50,6 +50,9 @@ module.exports = {
       globals: {
         ethers: 'readonly',
       },
+      rules: {
+        'no-console': 'off', // Allow console statements in frontend
+      },
     },
   ],
 };

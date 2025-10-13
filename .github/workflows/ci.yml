@@ -52,6 +52,11 @@ jobs:
       - name: "Generate test report"
         run: "npm run test:report"
 
+      - name: "Create directories if they don't exist"
+        run: |
+          mkdir -p test-results
+          mkdir -p coverage
+
       - name: "Add test summary"
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
@@ -66,6 +71,7 @@ jobs:
           name: "test-reports"
           path: "test-results/"
           retention-days: 30
+          if-no-files-found: warn
 
       - name: "Upload coverage reports"
         uses: "actions/upload-artifact@v4"
@@ -74,6 +80,7 @@ jobs:
           name: "coverage-reports"
           path: "coverage/"
           retention-days: 30
+          if-no-files-found: warn
 
       - name: "Comment PR with test results"
         if: github.event_name == 'pull_request'
