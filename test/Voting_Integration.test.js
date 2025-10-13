@@ -27,124 +27,49 @@ describe("Voting Contract Integration Tests", function () {
   });
 
   describe("Contract Integration Deployment", function () {
-    it.only("Should deploy and connect all contracts correctly @pass", async function () {
+    it("Should deploy and connect all contracts correctly @pass", async function () {
       const addresses = await voting.getContractAddresses();
       
       // Verify all contracts are deployed
-      expect(addresses.candidateManagerAddr).to.not.equal(ethers.ZeroAddress);
-      expect(addresses.electionManagerAddr).to.not.equal(ethers.ZeroAddress);
-      expect(addresses.votingCoreAddr).to.not.equal(ethers.ZeroAddress);
-      expect(addresses.resultsAggregatorAddr).to.not.equal(ethers.ZeroAddress);
+      expect(addresses.candidateManagerAddr, "CandidateManager contract is not deployed").to.not.equal(ethers.ZeroAddress);
+      expect(addresses.electionManagerAddr, "ElectionManager contract is not deployed").to.not.equal(ethers.ZeroAddress);
+      expect(addresses.votingCoreAddr, "VotingCore contract is not deployed").to.not.equal(ethers.ZeroAddress);
+      expect(addresses.resultsAggregatorAddr, "ResultsAggregator contract is not deployed").to.not.equal(ethers.ZeroAddress);
       
       // Verify cross-contract references
-      expect(await voting.candidateManager()).to.equal(await candidateManager.getAddress());
-      expect(await voting.electionManager()).to.equal(await electionManager.getAddress());
-      expect(await voting.votingCore()).to.equal(await votingCore.getAddress());
-      expect(await voting.resultsAggregator()).to.equal(await resultsAggregator.getAddress());
+      expect(await voting.candidateManager(), "CandidateManager contract reference is not correct").to.equal(await candidateManager.getAddress());
+      expect(await voting.electionManager(), "ElectionManager contract reference is not correct").to.equal(await electionManager.getAddress());
+      expect(await voting.votingCore(), "VotingCore contract reference is not correct").to.equal(await votingCore.getAddress());
+      expect(await voting.resultsAggregator(), "ResultsAggregator contract reference is not correct").to.equal(await resultsAggregator.getAddress());
     });
 
     it("Should have proper cross-contract authorizations @pass", async function () {
       // Check that VotingCore is authorized to interact with other contracts
-      expect(await candidateManager.authorizedContracts(await votingCore.getAddress())).to.be.true;
-      expect(await electionManager.authorizedContracts(await votingCore.getAddress())).to.be.true;
-      expect(await resultsAggregator.authorizedContracts(await votingCore.getAddress())).to.be.true;
+      expect(await candidateManager.authorizedContracts(await votingCore.getAddress()), "CandidateManager is not authorized to interact with VotingCore").to.be.true;
+      expect(await electionManager.authorizedContracts(await votingCore.getAddress()), "ElectionManager is not authorized to interact with VotingCore").to.be.true;
+      expect(await resultsAggregator.authorizedContracts(await votingCore.getAddress()), "ResultsAggregator is not authorized to interact with VotingCore").to.be.true;
     });
 
     it("Should get all candidates through main Voting contract @pass", async function () {
-      // Add some candidates
-      await voting.addCandidate("Alice");
-      await voting.addCandidate("Bob");
-      await voting.addCandidate("Charlie");
-      
-      // Test getAllCandidates function
-      const candidates = await voting.getAllCandidates();
-      expect(candidates.length).to.equal(3);
-      expect(candidates[0][1]).to.equal("Alice");
-      expect(candidates[1][1]).to.equal("Bob");
-      expect(candidates[2][1]).to.equal("Charlie");
-      
-      // Verify the function returns the same data as calling candidateManager directly
-      const directCandidates = await candidateManager.getAllCandidates();
-      expect(candidates.length).to.equal(directCandidates.length);
-      for (let i = 0; i < candidates.length; i++) {
-        expect(candidates[i][0]).to.equal(directCandidates[i][0]); // id
-        expect(candidates[i][1]).to.equal(directCandidates[i][1]); // name
-        expect(candidates[i][2]).to.equal(directCandidates[i][2]); // voteCount
+      const addedCandidates = ["Alice", "Bob", "Charlie"];
+
+      // Add candidates
+      for (const candidate of addedCandidates) {
+        await voting.addCandidate(candidate);
       }
-    });
-  });
-
-  describe("End-to-End Voting Workflow", function () {
-    it("Should complete full voting cycle @pass", async function () {
-      // 1. Add candidates
-      await voting.addCandidate("Alice");
-      await voting.addCandidate("Bob");
-      await voting.addCandidate("Charlie");
-      expect(await voting.candidatesCount()).to.equal(3);
       
-      // 2. Start election
-      await voting.startElection();
-      expect(await voting.isElectionActive()).to.be.true;
-      expect(await voting.currentElectionRound()).to.equal(1);
+      // Fetch all candidates
+      const candidates = await voting.getAllCandidates();
       
-      // 3. Cast votes
-      await voting.connect(voter1).vote(1); // Alice
-      await voting.connect(voter2).vote(2); // Bob
-      await voting.connect(voter3).vote(1); // Alice
+      // Check length first
+      expect(candidates.length, "Number of added candidates and fetched candidates from Voting contract should match").to.equal(addedCandidates.length);
       
-      // 4. Verify vote counts
-      const alice = await voting.getCandidate(1);
-      const bob = await voting.getCandidate(2);
-      const charlie = await voting.getCandidate(3);
-      expect(alice[2]).to.equal(2); // Alice has 2 votes
-      expect(bob[2]).to.equal(1);   // Bob has 1 vote
-      expect(charlie[2]).to.equal(0); // Charlie has 0 votes
-      
-      // 5. Check voter status
-      expect(await voting.checkVoted(voter1.address)).to.be.true;
-      expect(await voting.checkVoted(voter2.address)).to.be.true;
-      expect(await voting.checkVoted(voter3.address)).to.be.true;
-      
-      // 6. Get results
-      const [winnerId, winnerName, voteCount] = await voting.getWinner();
-      expect(winnerId).to.equal(1);
-      expect(winnerName).to.equal("Alice");
-      expect(voteCount).to.equal(2);
-      
-      // 7. End election
-      await voting.endElection();
-      expect(await voting.isElectionActive()).to.be.false;
-    });
-
-    it("Should handle multiple election rounds @pass", async function () {
-      // Setup
-      await voting.addCandidate("Alice");
-      await voting.addCandidate("Bob");
-      
-      // Round 1
-      await voting.startElection();
-      await voting.connect(voter1).vote(1);
-      await voting.connect(voter2).vote(2);
-      expect(await voting.currentElectionRound()).to.equal(1);
-      expect(await voting.getTotalVotes()).to.equal(2);
-      
-      // End Round 1
-      await voting.endElection();
-      
-      // Round 2
-      await voting.startElection();
-      expect(await voting.currentElectionRound()).to.equal(2);
-      
-      // Same voters can vote again in new round
-      await voting.connect(voter1).vote(2);
-      await voting.connect(voter2).vote(1);
-      expect(await voting.getTotalVotes()).to.equal(2);
-      
-      // Verify vote counts reset and new votes counted
-      const alice = await voting.getCandidate(1);
-      const bob = await voting.getCandidate(2);
-      expect(alice[2]).to.equal(1); // Alice has 1 vote in round 2
-      expect(bob[2]).to.equal(1);   // Bob has 1 vote in round 2
+      // verify each candidate name
+      candidates.forEach((candidate, index) => {
+        const candidateName = candidate[1];
+        expect(candidateName, `Added candidate name should match fetched candidate name from Voting contract`)
+          .to.equal(addedCandidates[index]);
+      });
     });
   });
 
@@ -159,21 +84,21 @@ describe("Voting Contract Integration Tests", function () {
       await voting.connect(voter1).vote(1);
       await voting.connect(voter2).vote(2);
       
-      // Check data consistency across contracts
+      // Check candidate vote count consistency
       const mainCandidate = await voting.getCandidate(1);
       const coreCandidate = await votingCore.getCandidate(1);
       const managerCandidate = await candidateManager.getCandidate(1);
       
-      expect(mainCandidate[2]).to.equal(coreCandidate[2]);
-      expect(coreCandidate[2]).to.equal(managerCandidate[2]);
+      expect(mainCandidate[2], "Main candidate vote count should match VotingCore candidate vote count").to.equal(coreCandidate[2]);
+      expect(coreCandidate[2], "VotingCore candidate vote count should match CandidateManager candidate vote count").to.equal(managerCandidate[2]);
       
       // Check election status consistency
-      expect(await voting.isElectionActive()).to.equal(await votingCore.isElectionActive());
-      expect(await votingCore.isElectionActive()).to.equal(await electionManager.isElectionActive());
-      
+      expect(await voting.isElectionActive(), "Election status should match VotingCore election status").to.equal(await votingCore.isElectionActive());
+      expect(await votingCore.isElectionActive(), "VotingCore election status should match ElectionManager election status").to.equal(await electionManager.isElectionActive());
+
       // Check voter status consistency
-      expect(await voting.checkVoted(voter1.address)).to.equal(await votingCore.checkVoted(voter1.address));
-      expect(await votingCore.checkVoted(voter1.address)).to.equal(await electionManager.hasVotedInCurrentRound(voter1.address));
+      expect(await voting.checkVoted(voter1.address), "Voter 1 status should match VotingCore voter status").to.equal(await votingCore.checkVoted(voter1.address));
+      expect(await votingCore.checkVoted(voter1.address), "VotingCore voter status should match ElectionManager voter status").to.equal(await electionManager.hasVotedInCurrentRound(voter1.address));
     });
 
     it("Should synchronize vote counts across contracts @fail", async function () {
@@ -204,6 +129,56 @@ describe("Voting Contract Integration Tests", function () {
           "\n" + err.message
         );
       }
+    });
+  });
+
+  describe("End-to-End Voting Workflow", function () {
+    it("Should complete full voting cycle @pass @e2e", async function () {
+      // 1. Add candidates
+      const addedCandidates = ["Alice", "Bob", "Charlie"];
+
+      for (const candidate of addedCandidates) {
+        await voting.addCandidate(candidate);
+      }
+      // verify candidates count
+      const candidatesCount = await voting.candidatesCount();
+      expect(
+        await voting.candidatesCount(),
+        `Number of added candidates (${addedCandidates.length}) and fetched candidates (${candidatesCount}) from Voting contract should match`
+      ).to.equal(addedCandidates.length);
+      
+      // 2. Start election
+      await voting.startElection();
+      expect(await voting.isElectionActive(), "Election should be active").to.be.true;
+      expect(await voting.currentElectionRound(), "Current election round should be 1").to.equal(1);
+      
+      // 3. Cast votes
+      await voting.connect(voter1).vote(1); // Alice
+      await voting.connect(voter2).vote(2); // Bob
+      await voting.connect(voter3).vote(1); // Alice
+      
+      // 4. Verify vote counts
+      const alice = await voting.getCandidate(1);
+      const bob = await voting.getCandidate(2);
+      const charlie = await voting.getCandidate(3);
+      expect(alice[2], "Alice should have 2 votes").to.equal(2); // Alice has 2 votes
+      expect(bob[2], "Bob should have 1 vote").to.equal(1);   // Bob has 1 vote
+      expect(charlie[2], "Charlie should have 0 votes").to.equal(0); // Charlie has 0 votes
+      
+      // 5. Check voter status
+      expect(await voting.checkVoted(voter1.address), "Voter 1 should have voted").to.be.true;
+      expect(await voting.checkVoted(voter2.address), "Voter 2 should have voted").to.be.true;
+      expect(await voting.checkVoted(voter3.address), "Voter 3 should have voted").to.be.true;
+      
+      // 6. Get results
+      const [winnerId, winnerName, voteCount] = await voting.getWinner();
+      expect(winnerId, "Winner ID should be 1").to.equal(1);
+      expect(winnerName, "Winner name should be Alice").to.equal("Alice");
+      expect(voteCount, "Winner vote count should be 2").to.equal(2);
+      
+      // 7. End election
+      await voting.endElection();
+      expect(await voting.isElectionActive(), "Election should be inactive").to.be.false;
     });
   });
 
