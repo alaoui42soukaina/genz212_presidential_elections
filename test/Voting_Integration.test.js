@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { addCandidates, startElection, setupElectionWithCandidates, castVotes } = require("./helpers/testHelpers");
 
 describe("Voting Contract Integration Tests", function () {
   this.timeout(30000);
@@ -57,14 +58,14 @@ describe("Voting Contract Integration Tests", function () {
 
   describe("Cross-Contract Data Consistency", function () {
     beforeEach(async function () {
-      await voting.addCandidate("Alice");
-      await voting.addCandidate("Bob");
-      await voting.startElection();
+      await setupElectionWithCandidates(voting, ["Alice", "Bob"]);
     });
 
     it("Should maintain consistent data across all contracts @pass @integration", async function () {
-      await voting.connect(voter1).vote(1);
-      await voting.connect(voter2).vote(2);
+      await castVotes(voting, [
+        { voter: voter1, candidateId: 1 },
+        { voter: voter2, candidateId: 2 }
+      ]);
       
       // Check candidate vote count consistency
       const mainCandidate = await voting.getCandidate(1);
@@ -121,7 +122,7 @@ describe("Voting Contract Integration Tests", function () {
       let candidateCount = 1;
 
       for (const candidateName of addedCandidates) {
-        // check on chain event
+        // Verify candidate is added
         try {
           await expect(voting.addCandidate(candidateName))
             .to.emit(voting, "CandidateAdded")
@@ -136,7 +137,7 @@ describe("Voting Contract Integration Tests", function () {
           );
         }
 
-        // check on chain state
+        // Verify candidate count and name
         const candidatesCount = await voting.candidatesCount();
         expect(candidatesCount, `Candidates count should match. Expected: ${candidateCount-1}, Got: ${candidatesCount}`).to.equal(candidateCount-1);
         const candidate = await voting.getCandidate(candidateCount - 1);
@@ -203,15 +204,14 @@ describe("Voting Contract Integration Tests", function () {
 
   describe("Error Handling and Edge Cases", function () {
     it("Should prohibit voting before election starts @pass @integration", async function () {
-      await voting.addCandidate("Alice");
+      await addCandidates(voting, ["Alice"]);
       
       await expect(voting.connect(voter1).vote(1))
         .to.be.revertedWith("Election is not active");
     });
 
     it("Should prohibit voting after election ends @pass @integration", async function () {
-      await voting.addCandidate("Alice");
-      await voting.startElection();
+      await setupElectionWithCandidates(voting, ["Alice"]);
       await voting.endElection();
       
       await expect(voting.connect(voter1).vote(1))
@@ -220,8 +220,7 @@ describe("Voting Contract Integration Tests", function () {
 
     it("Should prohibit voting for invalid candidate IDs @fail @integration", async function () {
       const invalidCandidateIds = [0, 1]; // injected bug, correction : const invalidCandidateIds = [0, 2];
-      await voting.addCandidate("Alice");
-      await voting.startElection();
+      await setupElectionWithCandidates(voting, ["Alice"]);
       
       for (const candidateID of invalidCandidateIds) {
         try {
@@ -237,9 +236,7 @@ describe("Voting Contract Integration Tests", function () {
     });
 
     it("Should prohibit double voting @pass @integration", async function () {
-      await voting.addCandidate("Alice");
-      await voting.addCandidate("Bob");
-      await voting.startElection();
+      await setupElectionWithCandidates(voting, ["Alice", "Bob"]);
       
       await voting.connect(voter1).vote(1);
       
@@ -254,16 +251,14 @@ describe("Voting Contract Integration Tests", function () {
     });
 
     it("Should not allow non-owner to end election @pass @integration", async function () {
-      await voting.addCandidate("Alice");
-      await voting.startElection();
+      await setupElectionWithCandidates(voting, ["Alice"]);
       await expect(
         voting.connect(voter1).endElection()
       ).to.be.revertedWith("Only the owner can perform this action");
     });
 
     it("Should not allow owner to end election @fail @integration", async function () {
-      await voting.addCandidate("Alice");
-      await voting.startElection();
+      await setupElectionWithCandidates(voting, ["Alice"]);
       await expect(
         //injected bug, correction : connect(voter1)
         voting.connect(owner).endElection()).to.be.revertedWith("Only the owner can perform this action");
