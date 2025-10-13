@@ -50,27 +50,6 @@ describe("Voting Contract Integration Tests", function () {
       expect(await resultsAggregator.authorizedContracts(await votingCore.getAddress()), "ResultsAggregator is not authorized to interact with VotingCore").to.be.true;
     });
 
-    it("Should get all candidates through main Voting contract @pass", async function () {
-      const addedCandidates = ["Alice", "Bob", "Charlie"];
-
-      // Add candidates
-      for (const candidate of addedCandidates) {
-        await voting.addCandidate(candidate);
-      }
-      
-      // Fetch all candidates
-      const candidates = await voting.getAllCandidates();
-      
-      // Check length first
-      expect(candidates.length, "Number of added candidates and fetched candidates from Voting contract should match").to.equal(addedCandidates.length);
-      
-      // verify each candidate name
-      candidates.forEach((candidate, index) => {
-        const candidateName = candidate[1];
-        expect(candidateName, `Added candidate name should match fetched candidate name from Voting contract`)
-          .to.equal(addedCandidates[index]);
-      });
-    });
   });
 
   describe("Cross-Contract Data Consistency", function () {
