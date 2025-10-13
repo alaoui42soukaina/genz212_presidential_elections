@@ -16,5 +16,22 @@ module.exports = {
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts"
+  },
+  mocha: {
+    reporter: 'mochawesome',
+    reporterOptions: {
+      reportDir: './test-results',
+      reportFilename: 'mochawesome-report',
+      reportTitle: 'Smart Contract Test Results',
+      reportPageTitle: 'Voting DApp Test Suite',
+      embeddedScreenshots: true,
+      inlineAssets: true,
+      saveAllAttempts: false,
+      quiet: false,
+      html: true,
+      json: true,
+      overwrite: true,
+      timestamp: 'longDate'
+    }
   }
 };

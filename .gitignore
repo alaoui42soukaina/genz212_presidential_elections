@@ -11,6 +11,7 @@ node_modules/
 
 # Testing
 coverage.json
+test-results/
 
 # Build outputs
 typechain/
