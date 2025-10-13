@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { deployContract } = require("./helpers/testHelpers");
+const { deployContract, addCandidates } = require("./helpers/testHelpers");
 
 describe("VotingCore Contract", function () {
   let votingCore;
@@ -31,8 +31,7 @@ describe("VotingCore Contract", function () {
     await votingCore.authorizeContract(authorizedContract.address);
     
     // Add some candidates
-    await candidateManager.addCandidate("Alice");
-    await candidateManager.addCandidate("Bob");
+    await addCandidates(candidateManager, ["Alice", "Bob"]);
   });
 
   describe("Deployment", function () {

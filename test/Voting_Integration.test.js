@@ -1,9 +1,8 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { deployContract, addCandidates, startElection, setupElectionWithCandidates, castVotes } = require("./helpers/testHelpers");
+const { deployContract, addCandidates, setupElectionWithCandidates, castVotes } = require("./helpers/testHelpers");
 
 describe("Voting Contract Integration Tests", function () {
-  this.timeout(30000);
   
   let voting;
   let candidateManager;
@@ -16,7 +15,6 @@ describe("Voting Contract Integration Tests", function () {
   let voter3;
 
   beforeEach(async function () {
-    this.timeout(10000);
     [owner, voter1, voter2, voter3] = await ethers.getSigners();
     
     voting = await deployContract("Voting");

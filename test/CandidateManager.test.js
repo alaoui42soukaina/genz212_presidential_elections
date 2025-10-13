@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { deployContract } = require("./helpers/testHelpers");
+const { deployContract, addCandidates } = require("./helpers/testHelpers");
 
 describe("CandidateManager Contract", function () {
   let candidateManager;
@@ -71,9 +71,7 @@ describe("CandidateManager Contract", function () {
     });
 
     it("Should increment candidate count correctly", async function () {
-      await candidateManager.addCandidate("Alice");
-      await candidateManager.addCandidate("Bob");
-      await candidateManager.addCandidate("Charlie");
+      await addCandidates(candidateManager, ["Alice", "Bob", "Charlie"]);
       
       expect(await candidateManager.getCandidatesCount()).to.equal(3);
     });
@@ -119,8 +117,7 @@ describe("CandidateManager Contract", function () {
 
   describe("Vote Count Management", function () {
     beforeEach(async function () {
-      await candidateManager.addCandidate("Alice");
-      await candidateManager.addCandidate("Bob");
+      await addCandidates(candidateManager, ["Alice", "Bob"]);
       await candidateManager.authorizeContract(authorizedContract.address);
     });
 

@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { deployContract } = require("./helpers/testHelpers");
+const { deployContract, addCandidates } = require("./helpers/testHelpers");
 
 describe("ResultsAggregator Contract", function () {
   let resultsAggregator;
@@ -21,9 +21,7 @@ describe("ResultsAggregator Contract", function () {
     ]);
     
     // Add some candidates
-    await candidateManager.addCandidate("Alice");
-    await candidateManager.addCandidate("Bob");
-    await candidateManager.addCandidate("Charlie");
+    await addCandidates(candidateManager, ["Alice", "Bob", "Charlie"]);
     
     // Set up authorizations
     await candidateManager.authorizeContract(authorizedContract.address);
