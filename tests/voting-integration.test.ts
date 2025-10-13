@@ -1,5 +1,6 @@
 import { test } from '@playwright/test';
 import { ContractTestHelper, expect } from '../test-helpers/contract-test-helper';
+import { ethers } from 'ethers';
 
 test.describe('Voting Contract Integration Tests', () => {
   let voting: any;
@@ -24,10 +25,10 @@ test.describe('Voting Contract Integration Tests', () => {
       const addresses = await ContractTestHelper.getContractAddresses(voting);
       
       // Verify all contracts are deployed
-      expect.toBe(addresses.candidateManager !== "0x0000000000000000000000000000000000000000", true);
-      expect.toBe(addresses.electionManager !== "0x0000000000000000000000000000000000000000", true);
-      expect.toBe(addresses.votingCore !== "0x0000000000000000000000000000000000000000", true);
-      expect.toBe(addresses.resultsAggregator !== "0x0000000000000000000000000000000000000000", true);
+      expect.toBe(addresses.candidateManager !== ethers.ZeroAddress, true);
+      expect.toBe(addresses.electionManager !== ethers.ZeroAddress, true);
+      expect.toBe(addresses.votingCore !== ethers.ZeroAddress, true);
+      expect.toBe(addresses.resultsAggregator !== ethers.ZeroAddress, true);
       
       // Verify cross-contract references
       expect.toBe(await voting.candidateManager(), await candidateManager.getAddress());
