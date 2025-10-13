@@ -1,7 +1,12 @@
 import { ethers } from 'hardhat';
 import { expect as playwrightExpect } from '@playwright/test';
 
-// Custom expect function that handles BigInt conversions
+/**
+ * Custom expect function that handles BigInt conversions
+ * @param actual - The actual value to compare
+ * @param expected - The expected value to compare
+ * @returns The result of the comparison
+ */
 export const expect = {
   toBe: (actual: any, expected: any) => {
     const convertedActual = ContractTestHelper.convertBigIntToNumber(actual);
