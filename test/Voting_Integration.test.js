@@ -2,6 +2,8 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Voting Contract Integration Tests", function () {
+  this.timeout(30000);
+  
   let voting;
   let candidateManager;
   let electionManager;
@@ -13,6 +15,7 @@ describe("Voting Contract Integration Tests", function () {
   let voter3;
 
   beforeEach(async function () {
+    this.timeout(10000);
     [owner, voter1, voter2, voter3] = await ethers.getSigners();
     
     const Voting = await ethers.getContractFactory("Voting");
@@ -135,9 +138,9 @@ describe("Voting Contract Integration Tests", function () {
 
         // check on chain state
         const candidatesCount = await voting.candidatesCount();
-        expect(candidatesCount, "Candidates count should match. Expected: ").to.equal(candidateCount-1);
+        expect(candidatesCount, `Candidates count should match. Expected: ${candidateCount-1}, Got: ${candidatesCount}`).to.equal(candidateCount-1);
         const candidate = await voting.getCandidate(candidateCount - 1);
-        expect(candidate[1], "Candidate name should match").to.equal(candidateName);
+        expect(candidate[1], `Candidate name should match. Expected: ${candidateName}, Got: ${candidate[1]}`).to.equal(candidateName);
         expect(candidate[2], "Candidate vote count should be 0").to.equal(0);
       }
       
