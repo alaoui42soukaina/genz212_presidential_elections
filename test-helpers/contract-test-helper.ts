@@ -1,38 +1,6 @@
-import { ethers } from 'hardhat';
-import { expect as playwrightExpect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-/**
- * Custom expect function that handles BigInt conversions
- * @param actual - The actual value to compare
- * @param expected - The expected value to compare
- * @returns The result of the comparison
- */
-export const expect = {
-  toBe: (actual: any, expected: any) => {
-    const convertedActual = ContractTestHelper.convertBigIntToNumber(actual);
-    const convertedExpected = ContractTestHelper.convertBigIntToNumber(expected);
-    return playwrightExpect(convertedActual).toBe(convertedExpected);
-  },
-  toEqual: (actual: any, expected: any) => {
-    const convertedActual = ContractTestHelper.convertBigIntToNumber(actual);
-    const convertedExpected = ContractTestHelper.convertBigIntToNumber(expected);
-    return playwrightExpect(convertedActual).toEqual(convertedExpected);
-  },
-  toBeTruthy: (actual: any) => {
-    return playwrightExpect(actual).toBeTruthy();
-  },
-  toBeFalsy: (actual: any) => {
-    return playwrightExpect(actual).toBeFalsy();
-  },
-  toContain: (actual: any, expected: any) => {
-    return playwrightExpect(actual).toContain(expected);
-  },
-  not: {
-    toContain: (actual: any, expected: any) => {
-      return playwrightExpect(actual).not.toContain(expected);
-    }
-  }
-};
+const { ethers } = require('hardhat');
 
 export interface ContractSigners {
   owner: any;
@@ -152,23 +120,23 @@ export class ContractTestHelper {
       }
     });
 
-    playwrightExpect(event, `Event ${eventName} should be emitted`).toBeTruthy();
+    expect(event, `Event ${eventName} should be emitted`).toBeTruthy();
     
     if (expectedArgs && event) {
       const parsedLog = contract.interface.parseLog(event);
       // Convert BigInt values to numbers for comparison
       const convertedArgs = this.convertBigIntToNumber(parsedLog.args);
-      playwrightExpect(convertedArgs, `Event ${eventName} should have correct arguments`).toEqual(expectedArgs);
+      expect(convertedArgs, `Event ${eventName} should have correct arguments`).toEqual(expectedArgs);
     }
   }
 
   static async expectRevert(txPromise: Promise<any>, expectedMessage?: string): Promise<void> {
     try {
       await txPromise;
-      playwrightExpect(false).toBeTruthy();
+      expect(false).toBeTruthy();
     } catch (error: any) {
       if (expectedMessage) {
-        playwrightExpect(error.message).toContain(expectedMessage);
+        expect(error.message).toContain(expectedMessage);
       }
     }
   }

@@ -1,5 +1,5 @@
-import { test } from '@playwright/test';
-import { ContractTestHelper, expect } from '../test-helpers/contract-test-helper';
+import { test, expect } from '@playwright/test';
+import { ContractTestHelper } from '../test-helpers/contract-test-helper';
 import { ethers } from 'ethers';
 
 test.describe('Voting Contract Integration Tests', () => {
@@ -25,23 +25,23 @@ test.describe('Voting Contract Integration Tests', () => {
       const addresses = await ContractTestHelper.getContractAddresses(voting);
       
       // Verify all contracts are deployed
-      expect.toBe(addresses.candidateManager !== ethers.ZeroAddress, true);
-      expect.toBe(addresses.electionManager !== ethers.ZeroAddress, true);
-      expect.toBe(addresses.votingCore !== ethers.ZeroAddress, true);
-      expect.toBe(addresses.resultsAggregator !== ethers.ZeroAddress, true);
+      expect(addresses.candidateManager).not.toBe(ethers.ZeroAddress);
+      expect(addresses.electionManager).not.toBe(ethers.ZeroAddress);
+      expect(addresses.votingCore).not.toBe(ethers.ZeroAddress);
+      expect(addresses.resultsAggregator).not.toBe(ethers.ZeroAddress);
       
       // Verify cross-contract references
-      expect.toBe(await voting.candidateManager(), await candidateManager.getAddress());
-      expect.toBe(await voting.electionManager(), await electionManager.getAddress());
-      expect.toBe(await voting.votingCore(), await votingCore.getAddress());
-      expect.toBe(await voting.resultsAggregator(), await resultsAggregator.getAddress());
+      expect(await voting.candidateManager()).toBe(await candidateManager.getAddress());
+      expect(await voting.electionManager()).toBe(await electionManager.getAddress());
+      expect(await voting.votingCore()).toBe(await votingCore.getAddress());
+      expect(await voting.resultsAggregator()).toBe(await resultsAggregator.getAddress());
     });
 
     test('Should have proper cross-contract authorizations @pass @integration', async () => {
       // Check that VotingCore is authorized to interact with other contracts
-      expect.toBe(await candidateManager.authorizedContracts(await votingCore.getAddress()), true);
-      expect.toBe(await electionManager.authorizedContracts(await votingCore.getAddress()), true);
-      expect.toBe(await resultsAggregator.authorizedContracts(await votingCore.getAddress()), true);
+      expect(await candidateManager.authorizedContracts(await votingCore.getAddress())).toBe(true);
+      expect(await electionManager.authorizedContracts(await votingCore.getAddress())).toBe(true);
+      expect(await resultsAggregator.authorizedContracts(await votingCore.getAddress())).toBe(true);
     });
   });
 
@@ -61,16 +61,16 @@ test.describe('Voting Contract Integration Tests', () => {
       const coreCandidate = await votingCore.getCandidate(1);
       const managerCandidate = await candidateManager.getCandidate(1);
       
-      expect.toBe(mainCandidate[2], coreCandidate[2]);
-      expect.toBe(coreCandidate[2], managerCandidate[2]);
+      expect(mainCandidate[2]).toBe(coreCandidate[2]);
+      expect(coreCandidate[2]).toBe(managerCandidate[2]);
       
       // Check election status consistency
-      expect.toBe(await voting.isElectionActive(), await votingCore.isElectionActive());
-      expect.toBe(await votingCore.isElectionActive(), await electionManager.isElectionActive());
+      expect(await voting.isElectionActive()).toBe(await votingCore.isElectionActive());
+      expect(await votingCore.isElectionActive()).toBe(await electionManager.isElectionActive());
 
       // Check voter status consistency
-      expect.toBe(await voting.checkVoted(signers.voter1.address), await votingCore.checkVoted(signers.voter1.address));
-      expect.toBe(await votingCore.checkVoted(signers.voter1.address), await electionManager.hasVotedInCurrentRound(signers.voter1.address));
+      expect(await voting.checkVoted(signers.voter1.address)).toBe(await votingCore.checkVoted(signers.voter1.address));
+      expect(await votingCore.checkVoted(signers.voter1.address)).toBe(await electionManager.hasVotedInCurrentRound(signers.voter1.address));
     });
 
     test('Should synchronize vote counts across contracts @fail @integration', async () => {
@@ -82,7 +82,7 @@ test.describe('Voting Contract Integration Tests', () => {
       const totalVotesResults = await resultsAggregator.getTotalVotes();
       
       try {
-        expect.toBe(totalVotesMain, totalVotesResults);
+        expect(totalVotesMain).toBe(totalVotesResults);
       } catch (err) {
         throw new Error(
           "Total votes should be equal. " +
@@ -93,7 +93,7 @@ test.describe('Voting Contract Integration Tests', () => {
       }
       
       try {
-        expect.toBe(totalVotesMain, numberOfVotes);
+        expect(totalVotesMain).toBe(numberOfVotes);
       } catch (err) {
         throw new Error(
           "Total votes should be " + numberOfVotes + ", " +
@@ -117,7 +117,7 @@ test.describe('Voting Contract Integration Tests', () => {
             voting.addCandidate(candidateName),
             voting,
             "CandidateAdded",
-            [candidateCount, candidateName]
+            [Number(candidateCount), candidateName]
           );
           candidateCount++;
         } catch (err) {
@@ -131,20 +131,20 @@ test.describe('Voting Contract Integration Tests', () => {
 
         // check on chain state
         const candidatesCount = await voting.candidatesCount();
-        expect.toBe(candidatesCount, candidateCount-1);
+        expect(candidatesCount).toBe(BigInt(candidateCount-1));
         const candidate = await voting.getCandidate(candidateCount - 1);
-        expect.toBe(candidate[1], candidateName);
-        expect.toBe(candidate[2], 0);
+        expect(candidate[1]).toBe(candidateName);
+        expect(candidate[2]).toBe(0n);
       }
       
       // 2. Start election
-      const currentRound = 1;
+      const currentRound = 1n;
       try {
         await ContractTestHelper.expectEvent(
           voting.startElection(),
           voting,
           "ElectionStarted",
-          [currentRound]
+          [Number(currentRound)]
         );
       } catch (err) {
         throw new Error(
@@ -153,8 +153,8 @@ test.describe('Voting Contract Integration Tests', () => {
           "\n" + (err as Error).message
         );
       }
-      expect.toBe(await voting.isElectionActive(), true);
-      expect.toBe(await voting.currentElectionRound(), currentRound);
+      expect(await voting.isElectionActive()).toBe(true);
+      expect(await voting.currentElectionRound()).toBe(currentRound);
       
       // 3. Cast votes
       const voters = [signers.voter1, signers.voter2, signers.voter3];
@@ -178,20 +178,20 @@ test.describe('Voting Contract Integration Tests', () => {
       const alice = await voting.getCandidate(1);
       const bob = await voting.getCandidate(2);
       const charlie = await voting.getCandidate(3);
-      expect.toBe(alice[2], 2);
-      expect.toBe(bob[2], 1);
-      expect.toBe(charlie[2], 0);
+      expect(alice[2]).toBe(2n);
+      expect(bob[2]).toBe(1n);
+      expect(charlie[2]).toBe(0n);
       
       // 5. Check voter status
-      expect.toBe(await voting.checkVoted(signers.voter1.address), true);
-      expect.toBe(await voting.checkVoted(signers.voter2.address), true);
-      expect.toBe(await voting.checkVoted(signers.voter3.address), true);
+      expect(await voting.checkVoted(signers.voter1.address)).toBe(true);
+      expect(await voting.checkVoted(signers.voter2.address)).toBe(true);
+      expect(await voting.checkVoted(signers.voter3.address)).toBe(true);
       
       // 6. Get results
       const [winnerId, winnerName, voteCount] = await voting.getWinner();
-      expect.toBe(winnerId, 1);
-      expect.toBe(winnerName, "Alice");
-      expect.toBe(voteCount, 2);
+      expect(winnerId).toBe(1n);
+      expect(winnerName).toBe("Alice");
+      expect(voteCount).toBe(2n);
       
       // 7. End election
       await ContractTestHelper.expectEvent(
@@ -199,7 +199,7 @@ test.describe('Voting Contract Integration Tests', () => {
         voting,
         "ElectionStopped"
       );
-      expect.toBe(await voting.isElectionActive(), false);
+      expect(await voting.isElectionActive()).toBe(false);
     });
   });
 

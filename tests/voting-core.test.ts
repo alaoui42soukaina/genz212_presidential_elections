@@ -1,5 +1,5 @@
-import { test } from '@playwright/test';
-import { ContractTestHelper, expect } from '../test-helpers/contract-test-helper';
+import { test, expect } from '@playwright/test';
+import { ContractTestHelper } from '../test-helpers/contract-test-helper';
 
 test.describe('VotingCore Contract', () => {
   let votingCore: any;
@@ -31,29 +31,29 @@ test.describe('VotingCore Contract', () => {
 
   test.describe('Deployment', () => {
     test('Should set the right owner', async () => {
-      expect.toBe(await votingCore.owner(), signers.owner.address);
+      expect(await votingCore.owner()).toBe(signers.owner.address);
     });
 
     test('Should set correct contract references', async () => {
-      expect.toBe(await votingCore.candidateManager(), await candidateManager.getAddress());
-      expect.toBe(await votingCore.electionManager(), await electionManager.getAddress());
+      expect(await votingCore.candidateManager()).toBe(await candidateManager.getAddress());
+      expect(await votingCore.electionManager()).toBe(await electionManager.getAddress());
     });
 
     test('Should authorize the owner by default', async () => {
-      expect.toBe(await votingCore.authorizedContracts(signers.owner.address), true);
+      expect(await votingCore.authorizedContracts(signers.owner.address)).toBe(true);
     });
   });
 
   test.describe('Authorization', () => {
     test('Should allow owner to authorize contracts', async () => {
       await votingCore.authorizeContract(signers.authorizedContract.address);
-      expect.toBe(await votingCore.authorizedContracts(signers.authorizedContract.address), true);
+      expect(await votingCore.authorizedContracts(signers.authorizedContract.address)).toBe(true);
     });
 
     test('Should allow owner to revoke authorization', async () => {
       await votingCore.authorizeContract(signers.authorizedContract.address);
       await votingCore.revokeContractAuthorization(signers.authorizedContract.address);
-      expect.toBe(await votingCore.authorizedContracts(signers.authorizedContract.address), false);
+      expect(await votingCore.authorizedContracts(signers.authorizedContract.address)).toBe(false);
     });
 
     test('Should not allow non-owner to authorize contracts', async () => {
@@ -73,9 +73,9 @@ test.describe('VotingCore Contract', () => {
       await votingCore.connect(signers.authorizedContract).vote(1, signers.voter1.address);
       
       const candidate = await candidateManager.getCandidate(1);
-      expect.toBe(candidate[2], 1); // vote count
+      expect(candidate[2]).toBe(1n); // vote count
       
-      expect.toBe(await electionManager.hasVotedInCurrentRound(signers.voter1.address), true);
+      expect(await electionManager.hasVotedInCurrentRound(signers.voter1.address)).toBe(true);
     });
 
     test('Should emit VoteCast event', async () => {
@@ -91,9 +91,9 @@ test.describe('VotingCore Contract', () => {
       await votingCore.connect(signers.voter1).voteDirect(1);
       
       const candidate = await candidateManager.getCandidate(1);
-      expect.toBe(candidate[2], 1);
+      expect(candidate[2]).toBe(1n);
       
-      expect.toBe(await electionManager.hasVotedInCurrentRound(signers.voter1.address), true);
+      expect(await electionManager.hasVotedInCurrentRound(signers.voter1.address)).toBe(true);
     });
 
     test('Should not allow voting when election is not active', async () => {
@@ -136,7 +136,7 @@ test.describe('VotingCore Contract', () => {
     test('Should allow voting in different rounds', async () => {
       // Vote in round 1
       await votingCore.connect(signers.authorizedContract).vote(1, signers.voter1.address);
-      expect.toBe(await electionManager.hasVotedInCurrentRound(signers.voter1.address), true);
+      expect(await electionManager.hasVotedInCurrentRound(signers.voter1.address)).toBe(true);
       
       // End and start new round
       await electionManager.endElection();
@@ -144,7 +144,7 @@ test.describe('VotingCore Contract', () => {
       
       // Should be able to vote again in new round
       await votingCore.connect(signers.authorizedContract).vote(2, signers.voter1.address);
-      expect.toBe(await electionManager.hasVotedInCurrentRound(signers.voter1.address), true);
+      expect(await electionManager.hasVotedInCurrentRound(signers.voter1.address)).toBe(true);
     });
   });
 
@@ -154,66 +154,66 @@ test.describe('VotingCore Contract', () => {
     });
 
     test('Should correctly check if voter has voted', async () => {
-      expect.toBe(await votingCore.checkVoted(signers.voter1.address), false);
+      expect(await votingCore.checkVoted(signers.voter1.address)).toBe(false);
       
       await votingCore.connect(signers.authorizedContract).vote(1, signers.voter1.address);
-      expect.toBe(await votingCore.checkVoted(signers.voter1.address), true);
+      expect(await votingCore.checkVoted(signers.voter1.address)).toBe(true);
     });
 
     test('Should correctly check if voter can vote', async () => {
-      expect.toBe(await votingCore.canVote(signers.voter1.address), true);
+      expect(await votingCore.canVote(signers.voter1.address)).toBe(true);
       
       await votingCore.connect(signers.authorizedContract).vote(1, signers.voter1.address);
-      expect.toBe(await votingCore.canVote(signers.voter1.address), false);
+      expect(await votingCore.canVote(signers.voter1.address)).toBe(false);
     });
 
     test('Should return correct voter election round', async () => {
-      expect.toBe(await votingCore.getVoterElectionRound(signers.voter1.address), 0);
+      expect(await votingCore.getVoterElectionRound(signers.voter1.address)).toBe(0n);
       
       await votingCore.connect(signers.authorizedContract).vote(1, signers.voter1.address);
-      expect.toBe(await votingCore.getVoterElectionRound(signers.voter1.address), 1);
+      expect(await votingCore.getVoterElectionRound(signers.voter1.address)).toBe(1n);
     });
 
     test('Should return current election round', async () => {
-      expect.toBe(await votingCore.getCurrentElectionRound(), 1);
+      expect(await votingCore.getCurrentElectionRound()).toBe(1n);
       
       await electionManager.endElection();
       await electionManager.startElection();
-      expect.toBe(await votingCore.getCurrentElectionRound(), 2);
+      expect(await votingCore.getCurrentElectionRound()).toBe(2n);
     });
 
     test('Should check election status', async () => {
-      expect.toBe(await votingCore.isElectionActive(), true);
+      expect(await votingCore.isElectionActive()).toBe(true);
       
       await electionManager.endElection();
-      expect.toBe(await votingCore.isElectionActive(), false);
+      expect(await votingCore.isElectionActive()).toBe(false);
     });
   });
 
   test.describe('Candidate Information', () => {
     test('Should get candidate details', async () => {
       const candidate = await votingCore.getCandidate(1);
-      expect.toBe(candidate[0], 1); // id
-      expect.toBe(candidate[1], "Alice"); // name
-      expect.toBe(candidate[2], 0); // voteCount
+      expect(candidate[0]).toBe(1n); // id
+      expect(candidate[1]).toBe("Alice"); // name
+      expect(candidate[2]).toBe(0n); // voteCount
     });
 
     test('Should get all candidates', async () => {
       const candidates = await votingCore.getAllCandidates();
-      expect.toBe(candidates.length, 2);
-      expect.toBe(candidates[0][1], "Alice");
-      expect.toBe(candidates[1][1], "Bob");
+      expect(candidates.length).toBe(2);
+      expect(candidates[0][1]).toBe("Alice");
+      expect(candidates[1][1]).toBe("Bob");
     });
 
     test('Should get candidates count', async () => {
-      expect.toBe(await votingCore.getCandidatesCount(), 2);
+      expect(await votingCore.getCandidatesCount()).toBe(2n);
     });
 
     test('Should check if candidate exists', async () => {
-      expect.toBe(await votingCore.candidateExists(1), true);
-      expect.toBe(await votingCore.candidateExists(2), true);
-      expect.toBe(await votingCore.candidateExists(0), false);
-      expect.toBe(await votingCore.candidateExists(3), false);
+      expect(await votingCore.candidateExists(1)).toBe(true);
+      expect(await votingCore.candidateExists(2)).toBe(true);
+      expect(await votingCore.candidateExists(0)).toBe(false);
+      expect(await votingCore.candidateExists(3)).toBe(false);
     });
   });
 
@@ -227,10 +227,10 @@ test.describe('VotingCore Contract', () => {
     test('Should return correct voting statistics', async () => {
       const [totalCandidates, currentRound, isActive, totalVotes] = await votingCore.getVotingStats();
       
-      expect.toBe(totalCandidates, 2);
-      expect.toBe(currentRound, 1);
-      expect.toBe(isActive, true);
-      expect.toBe(totalVotes, 2);
+      expect(totalCandidates).toBe(2n);
+      expect(currentRound).toBe(1n);
+      expect(isActive).toBe(true);
+      expect(totalVotes).toBe(2n);
     });
   });
 
@@ -257,14 +257,14 @@ test.describe('VotingCore Contract', () => {
       
       // Check vote count before reset
       const candidateBefore = await candidateManager.getCandidate(1);
-      expect.toBe(candidateBefore[2], 1);
+      expect(candidateBefore[2]).toBe(1n);
       
       // Reset voting data
       await votingCore.connect(signers.authorizedContract).resetVotingData();
       
       // Check vote count after reset
       const candidateAfter = await candidateManager.getCandidate(1);
-      expect.toBe(candidateAfter[2], 0);
+      expect(candidateAfter[2]).toBe(0n);
     });
 
     test('Should not allow unauthorized contracts to reset voting data', async () => {
@@ -283,8 +283,8 @@ test.describe('VotingCore Contract', () => {
       await votingCore.updateCandidateManager(await newCandidateManager.getAddress());
       await votingCore.updateElectionManager(await newElectionManager.getAddress());
       
-      expect.toBe(await votingCore.candidateManager(), await newCandidateManager.getAddress());
-      expect.toBe(await votingCore.electionManager(), await newElectionManager.getAddress());
+      expect(await votingCore.candidateManager()).toBe(await newCandidateManager.getAddress());
+      expect(await votingCore.electionManager()).toBe(await newElectionManager.getAddress());
     });
 
     test('Should not allow non-owner to update contract references', async () => {

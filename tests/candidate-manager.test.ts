@@ -1,5 +1,5 @@
-import { test } from '@playwright/test';
-import { ContractTestHelper, expect } from '../test-helpers/contract-test-helper';
+import { test, expect } from '@playwright/test';
+import { ContractTestHelper } from '../test-helpers/contract-test-helper';
 
 test.describe('CandidateManager Contract', () => {
   let candidateManager: any;
@@ -12,28 +12,28 @@ test.describe('CandidateManager Contract', () => {
 
   test.describe('Deployment', () => {
     test('Should set the right owner', async () => {
-      expect.toBe(await candidateManager.owner(), signers.owner.address);
+      expect(await candidateManager.owner()).toBe(signers.owner.address);
     });
 
     test('Should initialize with zero candidates', async () => {
-      expect.toBe(await candidateManager.getCandidatesCount(), 0);
+      expect(await candidateManager.getCandidatesCount()).toBe(0n);
     });
 
     test('Should authorize the owner by default', async () => {
-      expect.toBe(await candidateManager.authorizedContracts(signers.owner.address), true);
+      expect(await candidateManager.authorizedContracts(signers.owner.address)).toBe(true);
     });
   });
 
   test.describe('Authorization', () => {
     test('Should allow owner to authorize contracts', async () => {
       await candidateManager.authorizeContract(signers.authorizedContract.address);
-      expect.toBe(await candidateManager.authorizedContracts(signers.authorizedContract.address), true);
+      expect(await candidateManager.authorizedContracts(signers.authorizedContract.address)).toBe(true);
     });
 
     test('Should allow owner to revoke authorization', async () => {
       await candidateManager.authorizeContract(signers.authorizedContract.address);
       await candidateManager.revokeContractAuthorization(signers.authorizedContract.address);
-      expect.toBe(await candidateManager.authorizedContracts(signers.authorizedContract.address), false);
+      expect(await candidateManager.authorizedContracts(signers.authorizedContract.address)).toBe(false);
     });
 
     test('Should not allow non-owner to authorize contracts', async () => {
@@ -47,12 +47,12 @@ test.describe('CandidateManager Contract', () => {
   test.describe('Adding Candidates', () => {
     test('Should allow owner to add candidates', async () => {
       await candidateManager.addCandidate("Alice");
-      expect.toBe(await candidateManager.getCandidatesCount(), 1);
+      expect(await candidateManager.getCandidatesCount()).toBe(1n);
       
       const candidate = await candidateManager.getCandidate(1);
-      expect.toBe(candidate[0], 1); // id
-      expect.toBe(candidate[1], "Alice"); // name
-      expect.toBe(candidate[2], 0); // voteCount
+      expect(candidate[0]).toBe(1n); // id
+      expect(candidate[1]).toBe("Alice"); // name
+      expect(candidate[2]).toBe(0n); // voteCount
     });
 
     test('Should emit CandidateAdded event', async () => {
@@ -76,7 +76,7 @@ test.describe('CandidateManager Contract', () => {
       await candidateManager.addCandidate("Bob");
       await candidateManager.addCandidate("Charlie");
       
-      expect.toBe(await candidateManager.getCandidatesCount(), 3);
+      expect(await candidateManager.getCandidatesCount()).toBe(3n);
     });
   });
 
@@ -89,17 +89,17 @@ test.describe('CandidateManager Contract', () => {
 
     test('Should return candidate details correctly', async () => {
       const candidate = await candidateManager.getCandidate(2);
-      expect.toBe(candidate[0], 2); // id
-      expect.toBe(candidate[1], "Bob"); // name
-      expect.toBe(candidate[2], 0); // voteCount
+      expect(candidate[0]).toBe(2n); // id
+      expect(candidate[1]).toBe("Bob"); // name
+      expect(candidate[2]).toBe(0n); // voteCount
     });
 
     test('Should return all candidates', async () => {
       const candidates = await candidateManager.getAllCandidates();
-      expect.toBe(candidates.length, 3);
-      expect.toBe(candidates[0][1], "Alice");
-      expect.toBe(candidates[1][1], "Bob");
-      expect.toBe(candidates[2][1], "Charlie");
+      expect(candidates.length).toBe(3);
+      expect(candidates[0][1]).toBe("Alice");
+      expect(candidates[1][1]).toBe("Bob");
+      expect(candidates[2][1]).toBe("Charlie");
     });
 
     test('Should revert for invalid candidate ID', async () => {
@@ -115,10 +115,10 @@ test.describe('CandidateManager Contract', () => {
     });
 
     test('Should check if candidate exists', async () => {
-      expect.toBe(await candidateManager.candidateExists(1), true);
-      expect.toBe(await candidateManager.candidateExists(3), true);
-      expect.toBe(await candidateManager.candidateExists(0), false);
-      expect.toBe(await candidateManager.candidateExists(4), false);
+      expect(await candidateManager.candidateExists(1)).toBe(true);
+      expect(await candidateManager.candidateExists(3)).toBe(true);
+      expect(await candidateManager.candidateExists(0)).toBe(false);
+      expect(await candidateManager.candidateExists(4)).toBe(false);
     });
   });
 
@@ -133,7 +133,7 @@ test.describe('CandidateManager Contract', () => {
       await candidateManager.connect(signers.authorizedContract).updateCandidateVoteCount(1, 5);
       
       const candidate = await candidateManager.getCandidate(1);
-      expect.toBe(candidate[2], 5);
+      expect(candidate[2]).toBe(5n);
     });
 
     test('Should allow authorized contracts to increment vote count', async () => {
@@ -141,7 +141,7 @@ test.describe('CandidateManager Contract', () => {
       await candidateManager.connect(signers.authorizedContract).incrementCandidateVoteCount(1);
       
       const candidate = await candidateManager.getCandidate(1);
-      expect.toBe(candidate[2], 2);
+      expect(candidate[2]).toBe(2n);
     });
 
     test('Should emit CandidateVoteCountUpdated event', async () => {
@@ -163,8 +163,8 @@ test.describe('CandidateManager Contract', () => {
       
       const candidate1 = await candidateManager.getCandidate(1);
       const candidate2 = await candidateManager.getCandidate(2);
-      expect.toBe(candidate1[2], 0);
-      expect.toBe(candidate2[2], 0);
+      expect(candidate1[2]).toBe(0n);
+      expect(candidate2[2]).toBe(0n);
     });
 
     test('Should not allow unauthorized contracts to update vote counts', async () => {
