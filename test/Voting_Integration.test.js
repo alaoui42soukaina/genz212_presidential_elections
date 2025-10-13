@@ -27,7 +27,7 @@ describe("Voting Contract Integration Tests", function () {
   });
 
   describe("Contract Integration Deployment", function () {
-    it("Should deploy and connect all contracts correctly", async function () {
+    it.only("Should deploy and connect all contracts correctly @pass", async function () {
       const addresses = await voting.getContractAddresses();
       
       // Verify all contracts are deployed
@@ -43,14 +43,14 @@ describe("Voting Contract Integration Tests", function () {
       expect(await voting.resultsAggregator()).to.equal(await resultsAggregator.getAddress());
     });
 
-    it("Should have proper cross-contract authorizations", async function () {
+    it("Should have proper cross-contract authorizations @pass", async function () {
       // Check that VotingCore is authorized to interact with other contracts
       expect(await candidateManager.authorizedContracts(await votingCore.getAddress())).to.be.true;
       expect(await electionManager.authorizedContracts(await votingCore.getAddress())).to.be.true;
       expect(await resultsAggregator.authorizedContracts(await votingCore.getAddress())).to.be.true;
     });
 
-    it("Should get all candidates through main Voting contract", async function () {
+    it("Should get all candidates through main Voting contract @pass", async function () {
       // Add some candidates
       await voting.addCandidate("Alice");
       await voting.addCandidate("Bob");
@@ -75,7 +75,7 @@ describe("Voting Contract Integration Tests", function () {
   });
 
   describe("End-to-End Voting Workflow", function () {
-    it("Should complete full voting cycle", async function () {
+    it("Should complete full voting cycle @pass", async function () {
       // 1. Add candidates
       await voting.addCandidate("Alice");
       await voting.addCandidate("Bob");
@@ -116,7 +116,7 @@ describe("Voting Contract Integration Tests", function () {
       expect(await voting.isElectionActive()).to.be.false;
     });
 
-    it("Should handle multiple election rounds", async function () {
+    it("Should handle multiple election rounds @pass", async function () {
       // Setup
       await voting.addCandidate("Alice");
       await voting.addCandidate("Bob");
@@ -155,7 +155,7 @@ describe("Voting Contract Integration Tests", function () {
       await voting.startElection();
     });
 
-    it("Should maintain consistent data across all contracts", async function () {
+    it("Should maintain consistent data across all contracts @pass", async function () {
       await voting.connect(voter1).vote(1);
       await voting.connect(voter2).vote(2);
       
@@ -176,27 +176,46 @@ describe("Voting Contract Integration Tests", function () {
       expect(await votingCore.checkVoted(voter1.address)).to.equal(await electionManager.hasVotedInCurrentRound(voter1.address));
     });
 
-    it("Should synchronize vote counts across contracts", async function () {
-      await voting.connect(voter1).vote(1);
+    it("Should synchronize vote counts across contracts @fail", async function () {
+      const numberOfVotes = 1;
+      await voting.connect(voter1).vote(numberOfVotes);
       
       // Check vote counts are synchronized
-      const totalVotesMain = await voting.getTotalVotes();
+      const totalVotesMain = await voting.getTotalVotes() + 1n; // injected bug, correction : await voting.getTotalVotes();
       const totalVotesResults = await resultsAggregator.getTotalVotes();
       
-      expect(totalVotesMain).to.equal(totalVotesResults);
-      expect(totalVotesMain).to.equal(1);
+      try {
+        expect(totalVotesMain).to.equal(totalVotesResults);
+      } catch (err) {
+        throw new Error(
+          "Total votes should be equal. " +
+          "Main contract: " + totalVotesMain +
+          ", ResultsAggregator contract: " + totalVotesResults +
+          "\n" + err.message
+        );
+      }
+      
+      try {
+        expect(totalVotesMain).to.equal(numberOfVotes);
+      } catch (err) {
+        throw new Error(
+          "Total votes should be " + numberOfVotes + ", " +
+          "votes returned in main contract: " + totalVotesMain +
+          "\n" + err.message
+        );
+      }
     });
   });
 
   describe("Error Handling and Edge Cases", function () {
-    it("Should prohibit voting before election starts", async function () {
+    it("Should prohibit voting before election starts @pass", async function () {
       await voting.addCandidate("Alice");
       
       await expect(voting.connect(voter1).vote(1))
         .to.be.revertedWith("Election is not active");
     });
 
-    it("Should prohibit voting after election ends", async function () {
+    it("Should prohibit voting after election ends @pass", async function () {
       await voting.addCandidate("Alice");
       await voting.startElection();
       await voting.endElection();
@@ -205,18 +224,25 @@ describe("Voting Contract Integration Tests", function () {
         .to.be.revertedWith("Election is not active");
     });
 
-    it("Should prohibit voting for invalid candidate IDs", async function () {
+    it("Should prohibit voting for invalid candidate IDs @fail", async function () {
+      const invalidCandidateIds = [0, 1]; // injected bug, correction : const invalidCandidateIds = [0, 2];
       await voting.addCandidate("Alice");
       await voting.startElection();
       
-      await expect(voting.connect(voter1).vote(0))
-        .to.be.revertedWith("Invalid candidate ID");
-      
-      await expect(voting.connect(voter1).vote(2))
-        .to.be.revertedWith("Invalid candidate ID");
+      for (const candidateID of invalidCandidateIds) {
+        try {
+          await expect(voting.connect(voter1).vote(candidateID))
+            .to.be.revertedWith("Invalid candidate ID");
+        } catch (err) {
+          throw new Error(
+            "Voter should not be able to vote for invalid candidate ID : " +
+            candidateID + "\n" + err
+          );
+        }
+      }      
     });
 
-    it("Should prohibit double voting", async function () {
+    it("Should prohibit double voting @pass", async function () {
       await voting.addCandidate("Alice");
       await voting.addCandidate("Bob");
       await voting.startElection();
@@ -227,16 +253,26 @@ describe("Voting Contract Integration Tests", function () {
         .to.be.revertedWith("You have already voted in this election");
     });
 
-    it("Should not allow non-owner to start election", async function () {
+    it("Should not allow non-owner to start election @pass", async function () {
       await expect(
         voting.connect(voter1).startElection()
       ).to.be.revertedWith("Only the owner can perform this action");
     });
 
-    it("Should not allow non-owner to end election", async function () {
+    it("Should not allow non-owner to end election @pass", async function () {
+      await voting.addCandidate("Alice");
+      await voting.startElection();
       await expect(
         voting.connect(voter1).endElection()
       ).to.be.revertedWith("Only the owner can perform this action");
+    });
+
+    it("Should not allow owner to end election @fail", async function () {
+      await voting.addCandidate("Alice");
+      await voting.startElection();
+      await expect(
+        //injected bug, correction : connect(voter1)
+        voting.connect(owner).endElection()).to.be.revertedWith("Only the owner can perform this action");
     });
   });
 });
