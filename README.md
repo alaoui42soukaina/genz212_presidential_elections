@@ -27,12 +27,14 @@ A minimal decentralized voting application built with Hardhat, Solidity, and van
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <your-repo-url>
 cd genz212_presidential_elections
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -50,6 +52,7 @@ This will start a local Hardhat network on `http://127.0.0.1:8545`
 ### 2. Deploy Contract
 
 In a new terminal:
+
 ```bash
 npm run deploy
 ```
@@ -63,7 +66,7 @@ Open `frontend/index.html` in your browser.
 ### 4. Start Voting!
 
 1. Select an account from the dropdown (20 test accounts available)
-2. Click "Connect Account" 
+2. Click "Connect Account"
 3. Vote for your preferred candidate
 4. Use "Disconnect" to switch to another account and vote again
 5. Watch live results update in real-time
@@ -95,9 +98,11 @@ npm test
 ## Smart Contract Functions
 
 ### Owner Functions
+
 - `addCandidate(string name)` - Add a new candidate
 
 ### Public Functions
+
 - `vote(uint256 candidateId)` - Vote for a candidate
 - `getCandidate(uint256 candidateId)` - Get candidate details
 - `getAllCandidates()` - Get all candidates
@@ -116,8 +121,9 @@ npm test
 ### Adding More Candidates
 
 Connect to the contract as owner and call:
+
 ```javascript
-await voting.addCandidate("New Candidate Name");
+await voting.addCandidate('New Candidate Name');
 ```
 
 ### Styling
@@ -131,10 +137,12 @@ Edit `contracts/Voting.sol` to modify voting rules or add new features.
 ## Troubleshooting
 
 ### Connection Issues
+
 - Make sure Hardhat node is running on port 8545
 - Check that the contract is deployed
 
 ### Transaction Failures
+
 - Check you have enough ETH for gas
 - Ensure you haven't already voted
 - Verify candidate ID is valid

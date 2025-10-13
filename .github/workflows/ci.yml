@@ -1,7 +1,7 @@
-name: "CI"
+name: 'CI'
 
 env:
-  HARDHAT_VAR_MNEMONIC: "test test test test test test test test test test test junk"
+  HARDHAT_VAR_MNEMONIC: 'test test test test test test test test test test test junk'
 
 on:
   workflow_dispatch:
@@ -12,84 +12,84 @@ on:
 
 jobs:
   ci:
-    runs-on: "ubuntu-latest"
+    runs-on: 'ubuntu-latest'
     steps:
-      - name: "Check out the repo"
-        uses: "actions/checkout@v4"
+      - name: 'Check out the repo'
+        uses: 'actions/checkout@v4'
 
-      - name: "Setup Node.js"
-        uses: "actions/setup-node@v4"
+      - name: 'Setup Node.js'
+        uses: 'actions/setup-node@v4'
         with:
-          node-version: "18"
-          cache: "npm"
+          node-version: '18'
+          cache: 'npm'
 
-      - name: "Install the dependencies"
-        run: "npm ci"
+      - name: 'Install the dependencies'
+        run: 'npm ci'
 
-      - name: "Lint the code"
-        run: "npm run lint"
+      - name: 'Lint the code'
+        run: 'npm run lint'
 
-      - name: "Check code formatting"
-        run: "npm run format:check"
+      - name: 'Check code formatting'
+        run: 'npm run format:check'
 
-      - name: "Add lint summary"
+      - name: 'Add lint summary'
         run: |
           echo "## Lint results" >> $GITHUB_STEP_SUMMARY
           echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
 
-      - name: "Compile the contracts"
-        run: "npm run compile"
+      - name: 'Compile the contracts'
+        run: 'npm run compile'
 
-      - name: "Run unit tests"
+      - name: 'Run unit tests'
         run: "npm run test -- --grep '@unit'"
 
-      - name: "Run integration tests"
+      - name: 'Run integration tests'
         run: "npm run test -- --grep '@integration'"
 
-      - name: "Generate test coverage report"
-        run: "npm run test:coverage"
+      - name: 'Generate test coverage report'
+        run: 'npm run test:coverage'
 
-      - name: "Generate test report"
-        run: "npm run test:report"
+      - name: 'Generate test report'
+        run: 'npm run test:report'
 
       - name: "Create directories if they don't exist"
         run: |
           mkdir -p test-results
           mkdir -p coverage
 
-      - name: "Add test summary"
+      - name: 'Add test summary'
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
           echo "✅ Unit tests passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
 
-      - name: "Upload test reports"
-        uses: "actions/upload-artifact@v4"
+      - name: 'Upload test reports'
+        uses: 'actions/upload-artifact@v4'
         if: always()
         with:
-          name: "test-reports"
-          path: "test-results/"
+          name: 'test-reports'
+          path: 'test-results/'
           retention-days: 30
           if-no-files-found: warn
 
-      - name: "Upload coverage reports"
-        uses: "actions/upload-artifact@v4"
+      - name: 'Upload coverage reports'
+        uses: 'actions/upload-artifact@v4'
         if: always()
         with:
-          name: "coverage-reports"
-          path: "coverage/"
+          name: 'coverage-reports'
+          path: 'coverage/'
           retention-days: 30
           if-no-files-found: warn
 
-      - name: "Comment PR with test results"
+      - name: 'Comment PR with test results'
         if: github.event_name == 'pull_request'
-        uses: "actions/github-script@v7"
+        uses: 'actions/github-script@v7'
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
-            
+
             // Try to read the latest test report
             try {
               const testResultsDir = './test-results';
