@@ -4,12 +4,6 @@
   "description": "A minimal voting dapp built with Hardhat",
   "main": "index.js",
   "scripts": {
-    "compile": "hardhat compile",
-    "test": "hardhat test",
-    "test:report": "hardhat test --reporter mochawesome",
-    "test:coverage": "hardhat coverage",
-    "test:watch": "hardhat test --watch",
-    "test:grep": "hardhat test --grep",
     "report:open": "ls -t test-results/mochawesome-report_*.html | head -1 | xargs open",
     "report:clean": "rm -rf test-results/",
     "deploy": "hardhat run scripts/deploy.js --network localhost",

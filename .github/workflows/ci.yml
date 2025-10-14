@@ -43,20 +43,15 @@ jobs:
       - name: 'Run tests'
         run: npx hardhat test
 
-      - name: 'Generate test report'
-        run: 'npm run report:open'
-
-      - name: "Create directories if they don't exist"
-        run: |
-          mkdir -p test-results
-
-      - name: 'Add test summary'
+      - name: 'Generate test summary'
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Unit tests passed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ E2E tests passed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+          if [ -f "test-results/mochawesome-report_*.json" ]; then
+            echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "📊 Test reports generated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No test reports found" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: 'Upload test reports'
         uses: 'actions/upload-artifact@v4'
@@ -78,10 +73,18 @@ jobs:
             // Try to read the latest test report
             try {
               const testResultsDir = './test-results';
+              
+              // Check if directory exists
+              if (!fs.existsSync(testResultsDir)) {
+                console.log('Test results directory does not exist');
+                return;
+              }
+              
               const files = fs.readdirSync(testResultsDir);
-              const jsonFiles = files.filter(file => file.endsWith('.json'));
+              const jsonFiles = files.filter(file => file.endsWith('.json') && file.startsWith('mochawesome-report_'));
               
               if (jsonFiles.length > 0) {
+                // Sort by filename to get the latest
                 const latestJsonFile = jsonFiles.sort().pop();
                 const testData = JSON.parse(fs.readFileSync(path.join(testResultsDir, latestJsonFile), 'utf8'));
                 
@@ -89,12 +92,15 @@ jobs:
                 const comment = `## 🧪 Test Results
                 
                 **Summary:**
-                - ✅ Tests: ${stats.tests}
+                - 📊 Total Tests: ${stats.tests}
                 - ✅ Passed: ${stats.passes}
                 - ❌ Failed: ${stats.failures}
-                - ⏱️ Duration: ${stats.duration}ms
+                - ⏱️ Duration: ${(stats.duration / 1000).toFixed(2)}s
+                - 📁 Suites: ${stats.suites}
                 
-                ${stats.failures > 0 ? '⚠️ Some tests failed. Please check the test reports.' : '🎉 All tests passed!'}`;
+                ${stats.failures > 0 ? '⚠️ Some tests failed. Please check the test reports.' : '🎉 All tests passed!'}
+                
+                📋 **Test Reports:** Available in the workflow artifacts.`;
                 
                 github.rest.issues.createComment({
                   issue_number: context.issue.number,
@@ -102,6 +108,8 @@ jobs:
                   repo: context.repo.repo,
                   body: comment
                 });
+              } else {
+                console.log('No mochawesome test report files found');
               }
             } catch (error) {
               console.log('Could not read test results:', error.message);
