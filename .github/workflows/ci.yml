@@ -53,11 +53,56 @@ jobs:
             echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
             echo "📊 Test reports generated" >> $GITHUB_STEP_SUMMARY
             echo "📁 Report files:" >> $GITHUB_STEP_SUMMARY
-            ls -la test-results/*.json test-results/*.html 2>/dev/null >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "📋 **Access Options:**" >> $GITHUB_STEP_SUMMARY
-            echo "- 🌐 **Live Report:** https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/test-reports/${{ github.run_number }}/mochawesome-report_October_14_2025.html" >> $GITHUB_STEP_SUMMARY
-            echo "- 📦 **Download:** test-report artifact (zipped)" >> $GITHUB_STEP_SUMMARY
+            ls -la test-results/*.json >> $GITHUB_STEP_SUMMARY
+            
+            # Extract test statistics and failures
+            LATEST_JSON=$(ls -t test-results/mochawesome-report_*.json 2>/dev/null | head -1)
+            if [ -n "$LATEST_JSON" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "📊 **Test Statistics:**" >> $GITHUB_STEP_SUMMARY
+              
+              # Extract stats using node (since we have it available)
+              node -e "
+                const fs = require('fs');
+                try {
+                  const testData = JSON.parse(fs.readFileSync('$LATEST_JSON', 'utf8'));
+                  const stats = testData.stats;
+                  console.log('- Total Tests: ' + stats.tests);
+                  console.log('- Passed: ' + stats.passes);
+                  console.log('- Failed: ' + stats.failures);
+                  console.log('- Duration: ' + (stats.duration / 1000).toFixed(2) + 's');
+                  console.log('- Suites: ' + stats.suites);
+                  
+                  if (stats.failures > 0 && testData.results && testData.results.length > 0) {
+                    console.log('');
+                    console.log('❌ **Failed Tests:**');
+                    
+                    const extractFailedTests = (suite) => {
+                      if (suite.tests) {
+                        suite.tests.forEach(test => {
+                          if (test.state === 'failed') {
+                            console.log('- \`' + test.title + '\`');
+                            if (test.err && test.err.message) {
+                              console.log('  - Error: ' + test.err.message);
+                            }
+                          }
+                        });
+                      }
+                      if (suite.suites) {
+                        suite.suites.forEach(subSuite => extractFailedTests(subSuite));
+                      }
+                    };
+                    
+                    testData.results.forEach(suite => extractFailedTests(suite));
+                  } else {
+                    console.log('');
+                    console.log('🎉 All tests passed!');
+                  }
+                } catch (error) {
+                  console.log('Could not parse test results:', error.message);
+                }
+              " >> $GITHUB_STEP_SUMMARY
+            fi
           else
             echo "⚠️ No test reports found" >> $GITHUB_STEP_SUMMARY
             echo "📁 Contents of test-results directory:" >> $GITHUB_STEP_SUMMARY
@@ -83,14 +128,6 @@ jobs:
           name: 'test-report'
           path: ${{ env.REPORT_PATH }}
           retention-days: 30
-
-      - name: 'Deploy report to GitHub Pages'
-        if: github.ref == 'refs/heads/main' && env.REPORT_PATH != ''
-        uses: 'peaceiris/actions-gh-pages@v3'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: test-results
-          destination_dir: test-reports/${{ github.run_number }}
 
       - name: 'Comment PR with test results'
         if: github.event_name == 'pull_request'
@@ -119,6 +156,31 @@ jobs:
                 const testData = JSON.parse(fs.readFileSync(path.join(testResultsDir, latestJsonFile), 'utf8'));
                 
                 const stats = testData.stats;
+                
+                // Extract failed tests
+                let failedTestsList = '';
+                if (stats.failures > 0 && testData.results && testData.results.length > 0) {
+                  failedTestsList = '\n\n**❌ Failed Tests:**\n';
+                  
+                  const extractFailedTests = (suite) => {
+                    if (suite.tests) {
+                      suite.tests.forEach(test => {
+                        if (test.state === 'failed') {
+                          failedTestsList += `- \`${test.title}\`\n`;
+                          if (test.err && test.err.message) {
+                            failedTestsList += `  - Error: ${test.err.message}\n`;
+                          }
+                        }
+                      });
+                    }
+                    if (suite.suites) {
+                      suite.suites.forEach(subSuite => extractFailedTests(subSuite));
+                    }
+                  };
+                  
+                  testData.results.forEach(suite => extractFailedTests(suite));
+                }
+                
                 const comment = `## 🧪 Test Results
                 
                 **Summary:**
@@ -128,11 +190,9 @@ jobs:
                 - ⏱️ Duration: ${(stats.duration / 1000).toFixed(2)}s
                 - 📁 Suites: ${stats.suites}
                 
-                ${stats.failures > 0 ? '⚠️ Some tests failed. Please check the test reports.' : '🎉 All tests passed!'}
+                ${stats.failures > 0 ? '⚠️ Some tests failed. See details below.' : '🎉 All tests passed!'}${failedTestsList}
                 
-                📋 **Test Report:** 
-                - 🌐 **Live Report:** https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/test-reports/${{ github.run_number }}/
-                - 📦 **Download:** test-report artifact`;
+                📋 **Test Report:** Download the HTML report from the workflow artifacts to view detailed results.`;
                 
                 github.rest.issues.createComment({
                   issue_number: context.issue.number,
