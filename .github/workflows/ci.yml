@@ -40,27 +40,45 @@ jobs:
       - name: 'Compile the contracts'
         run: 'npm run compile'
 
+      - name: 'Create test results directory'
+        run: mkdir -p test-results
+
       - name: 'Run tests'
-        run: npx hardhat test
+        run: npm test
 
       - name: 'Generate test summary'
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
-          if [ -f "test-results/mochawesome-report_*.json" ]; then
+          if [ -d "test-results" ] && [ "$(ls -A test-results/*.json 2>/dev/null)" ]; then
             echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
             echo "📊 Test reports generated" >> $GITHUB_STEP_SUMMARY
+            echo "📁 Report files:" >> $GITHUB_STEP_SUMMARY
+            ls -la test-results/*.json >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ No test reports found" >> $GITHUB_STEP_SUMMARY
+            echo "📁 Contents of test-results directory:" >> $GITHUB_STEP_SUMMARY
+            ls -la test-results/ 2>/dev/null || echo "Directory does not exist" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: 'Upload test reports'
+      - name: 'Find and upload test report'
+        run: |
+          # Find the latest HTML report
+          LATEST_REPORT=$(ls -t test-results/mochawesome-report_*.html 2>/dev/null | head -1)
+          if [ -n "$LATEST_REPORT" ]; then
+            echo "Found report: $LATEST_REPORT"
+            echo "REPORT_PATH=$LATEST_REPORT" >> $GITHUB_ENV
+          else
+            echo "No HTML report found"
+            echo "REPORT_PATH=" >> $GITHUB_ENV
+          fi
+
+      - name: 'Upload test report'
         uses: 'actions/upload-artifact@v4'
-        if: always()
+        if: always() && env.REPORT_PATH != ''
         with:
-          name: 'test-reports'
-          path: 'test-results/'
+          name: 'test-report'
+          path: ${{ env.REPORT_PATH }}
           retention-days: 30
-          if-no-files-found: warn
 
       - name: 'Comment PR with test results'
         if: github.event_name == 'pull_request'
@@ -100,7 +118,7 @@ jobs:
                 
                 ${stats.failures > 0 ? '⚠️ Some tests failed. Please check the test reports.' : '🎉 All tests passed!'}
                 
-                📋 **Test Reports:** Available in the workflow artifacts.`;
+                📋 **Test Report:** Download the HTML report from the workflow artifacts to view detailed results.`;
                 
                 github.rest.issues.createComment({
                   issue_number: context.issue.number,
