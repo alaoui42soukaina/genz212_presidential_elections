@@ -345,7 +345,7 @@ describe('Voting Contract Integration Tests', function () {
     it('Should not allow non-owner to end election @integration', async function () {
       await setupElectionWithCandidates(voting, ['Alice']);
       await expect(voting.connect(voter1).endElection()).to.be.revertedWith(
-        'Only the owner can perform this action'
+        'Only the owner can perform this action123'
       );
     });
   });

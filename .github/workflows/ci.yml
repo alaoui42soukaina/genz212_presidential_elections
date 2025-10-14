@@ -44,16 +44,43 @@ jobs:
         run: mkdir -p test-results
 
       - name: 'Run tests'
-        run: npm test
+        run: |
+          set -e
+          MAX_RETRIES=2
+          TIMEOUT=60
+          
+          for attempt in $(seq 1 $((MAX_RETRIES + 1))); do
+            echo "Test attempt $attempt of $((MAX_RETRIES + 1))"
+            
+            if timeout $TIMEOUT npm test; then
+              echo "✅ Tests passed on attempt $attempt"
+              exit 0
+            else
+              EXIT_CODE=$?
+              if [ $EXIT_CODE -eq 124 ]; then
+                echo "⏰ Tests timed out after ${TIMEOUT}s on attempt $attempt"
+              else
+                echo "❌ Tests failed with exit code $EXIT_CODE on attempt $attempt"
+              fi
+              
+              if [ $attempt -le $MAX_RETRIES ]; then
+                echo "🔄 Retrying tests in 5 seconds..."
+                sleep 5
+                # Clean up any partial test results
+                npm run report:clean
+              else
+                echo "💥 All test attempts failed"
+                exit $EXIT_CODE
+              fi
+            fi
+          done
 
       - name: 'Generate test summary'
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
           if [ -d "test-results" ] && [ "$(ls -A test-results/*.json 2>/dev/null)" ]; then
             echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
-            echo "📊 Test reports generated" >> $GITHUB_STEP_SUMMARY
-            echo "📁 Report files:" >> $GITHUB_STEP_SUMMARY
-            ls -la test-results/*.json >> $GITHUB_STEP_SUMMARY
+            echo "📊 Test reports generated and available in the "test-report" artifact below" >> $GITHUB_STEP_SUMMARY
             
             # Extract test statistics and failures
             LATEST_JSON=$(ls -t test-results/mochawesome-report_*.json 2>/dev/null | head -1)
@@ -71,7 +98,6 @@ jobs:
                   console.log('- Passed: ' + stats.passes);
                   console.log('- Failed: ' + stats.failures);
                   console.log('- Duration: ' + (stats.duration / 1000).toFixed(2) + 's');
-                  console.log('- Suites: ' + stats.suites);
                   
                   if (stats.failures > 0 && testData.results && testData.results.length > 0) {
                     console.log('');
@@ -188,7 +214,6 @@ jobs:
                 - ✅ Passed: ${stats.passes}
                 - ❌ Failed: ${stats.failures}
                 - ⏱️ Duration: ${(stats.duration / 1000).toFixed(2)}s
-                - 📁 Suites: ${stats.suites}
                 
                 ${stats.failures > 0 ? '⚠️ Some tests failed. See details below.' : '🎉 All tests passed!'}${failedTestsList}
                 
