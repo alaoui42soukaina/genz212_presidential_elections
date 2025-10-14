@@ -40,14 +40,8 @@ jobs:
       - name: 'Compile the contracts'
         run: 'npm run compile'
 
-      - name: 'Run unit tests'
-        run: npx hardhat test --grep "@unit"
-
-      - name: 'Run integration tests'
-        run: npx hardhat test --grep "@integration"
-
-      - name: 'Run e2e tests'
-        run: npx hardhat test --grep "@e2e"
+      - name: 'Run tests'
+        run: npx hardhat test
 
       - name: 'Generate test report'
         run: 'npm run test:report'
