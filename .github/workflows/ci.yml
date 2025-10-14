@@ -48,7 +48,7 @@ jobs:
           set -e
           MAX_RETRIES=2
           TIMEOUT=60
-          
+
           for attempt in $(seq 1 $((MAX_RETRIES + 1))); do
             echo "Test attempt $attempt of $((MAX_RETRIES + 1))"
             
