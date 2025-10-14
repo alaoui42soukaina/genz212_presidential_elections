@@ -91,31 +91,36 @@ jobs:
             fi
           done
 
-          # Final summary for CI
-          if [ "$TESTS_PASSED" = true ]; then
-            echo "🎉 TESTS PASSED"
-          else
-            echo "😥 TESTS FAILED"
-          fi
 
       - name: 'Generate test summary'
+        if: always()
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if tests passed by looking at the latest test results
           if [ -d "test-results" ] && [ "$(ls -A test-results/*.json 2>/dev/null)" ]; then
-            echo "🔍 For a detailed test report, check the 'test-report' artifact below" >> $GITHUB_STEP_SUMMARY
-            
-            # Extract test statistics and failures
             LATEST_JSON=$(ls -t test-results/mochawesome-report_*.json 2>/dev/null | head -1)
             if [ -n "$LATEST_JSON" ]; then
+              echo "🔍 For a detailed test report, check the 'test-report' artifact below" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              echo "📊 **Test Statistics:**" >> $GITHUB_STEP_SUMMARY
+              echo "📊 **Test Results:**" >> $GITHUB_STEP_SUMMARY
               
-              # Extract stats using node (since we have it available)
+              # Extract stats and determine pass/fail status using node
               node -e "
                 const fs = require('fs');
                 try {
                   const testData = JSON.parse(fs.readFileSync('$LATEST_JSON', 'utf8'));
                   const stats = testData.stats;
+                  
+                  // Show overall test status
+                  if (stats.failures === 0) {
+                    console.log('✅ 🎉 **TESTS PASSED**');
+                  } else {
+                    console.log('❌ 😥 **TESTS FAILED**');
+                  }
+                  console.log('');
+                  
+                  // Show detailed stats
                   console.log('- Total Tests: ' + stats.tests);
                   console.log('- Passed: ' + stats.passes);
                   console.log('- Failed: ' + stats.failures);
@@ -147,14 +152,15 @@ jobs:
                     console.log('🎉 All tests passed!');
                   }
                 } catch (error) {
+                  console.log('⚠️ **TESTS STATUS UNKNOWN**');
                   console.log('Could not parse test results:', error.message);
                 }
               " >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **TESTS STATUS UNKNOWN**" >> $GITHUB_STEP_SUMMARY
             fi
           else
-            echo "⚠️ No test reports found" >> $GITHUB_STEP_SUMMARY
-            echo "📁 Contents of test-results directory:" >> $GITHUB_STEP_SUMMARY
-            ls -la test-results/ 2>/dev/null || echo "Directory does not exist" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **NO TEST RESULTS FOUND**" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: 'Find and upload test report'
