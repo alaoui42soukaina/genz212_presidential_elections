@@ -45,7 +45,6 @@ async function loadDeploymentInfo() {
     const response = await fetch('../config/deployment.json');
     const deploymentInfo = await response.json();
     CONTRACT_ADDRESS = deploymentInfo.contractAddress;
-    console.log('Loaded contract address:', CONTRACT_ADDRESS);
   } catch (error) {
     console.error('Failed to load deployment info:', error);
   }
@@ -92,7 +91,6 @@ async function loadNetworkConfig() {
   try {
     const response = await fetch('../config/network.json');
     NETWORK_CONFIG = await response.json();
-    console.log('Loaded network config:', NETWORK_CONFIG);
   } catch (error) {
     console.error('Failed to load network config.', error);
   }
@@ -191,7 +189,6 @@ async function loadCandidatesReadOnly() {
     // Load voter stats
     await loadVoterStats();
   } catch (error) {
-    console.log('Error loading candidates (read-only):', error.message);
   }
 }
 
