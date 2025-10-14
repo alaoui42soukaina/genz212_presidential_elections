@@ -41,7 +41,7 @@ jobs:
         run: 'npm run compile'
 
       - name: 'Run unit tests'
-        run: "npm run test -- --grep '@unit'"
+        run: npx hardhat test --grep "@unit"
 
       - name: 'Run integration tests'
         run: npx hardhat test --grep "@integration"
@@ -49,22 +49,19 @@ jobs:
       - name: 'Run e2e tests'
         run: npx hardhat test --grep "@e2e"
 
-      - name: 'Generate test coverage report'
-        run: 'npm run test:coverage'
-
       - name: 'Generate test report'
         run: 'npm run test:report'
 
       - name: "Create directories if they don't exist"
         run: |
           mkdir -p test-results
-          mkdir -p coverage
 
       - name: 'Add test summary'
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
           echo "✅ Unit tests passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ E2E tests passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
 
       - name: 'Upload test reports'
@@ -73,15 +70,6 @@ jobs:
         with:
           name: 'test-reports'
           path: 'test-results/'
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: 'Upload coverage reports'
-        uses: 'actions/upload-artifact@v4'
-        if: always()
-        with:
-          name: 'coverage-reports'
-          path: 'coverage/'
           retention-days: 30
           if-no-files-found: warn
 
@@ -111,8 +99,6 @@ jobs:
                 - ✅ Passed: ${stats.passes}
                 - ❌ Failed: ${stats.failures}
                 - ⏱️ Duration: ${stats.duration}ms
-                
-                **Coverage:** Check the coverage reports in the artifacts section.
                 
                 ${stats.failures > 0 ? '⚠️ Some tests failed. Please check the test reports.' : '🎉 All tests passed!'}`;
                 
