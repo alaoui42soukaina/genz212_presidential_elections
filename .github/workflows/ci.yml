@@ -61,15 +61,13 @@ jobs:
           set -e
           MAX_RETRIES=2
           TIMEOUT=60
-          TESTS_PASSED=false
 
           for attempt in $(seq 1 $((MAX_RETRIES + 1))); do
             echo "Test attempt $attempt of $((MAX_RETRIES + 1))"
             
             if timeout $TIMEOUT npm test; then
               echo "✅ Tests passed on attempt $attempt"
-              TESTS_PASSED=true
-              break
+              exit 0
             else
               EXIT_CODE=$?
               if [ $EXIT_CODE -eq 124 ]; then
@@ -85,7 +83,6 @@ jobs:
                 npm run report:clean
               else
                 echo "💥 All test attempts failed"
-                TESTS_PASSED=false
                 exit $EXIT_CODE
               fi
             fi
@@ -101,7 +98,7 @@ jobs:
           if [ -d "test-results" ] && [ "$(ls -A test-results/*.json 2>/dev/null)" ]; then
             LATEST_JSON=$(ls -t test-results/mochawesome-report_*.json 2>/dev/null | head -1)
             if [ -n "$LATEST_JSON" ]; then
-              echo "🔍 For a detailed test report, check the \`test-report\` artifact below" >> $GITHUB_STEP_SUMMARY
+              echo "🔍 For a detailed test report, check the \`test-report\` artifact below." >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "📊 **Test Results:**" >> $GITHUB_STEP_SUMMARY
               
