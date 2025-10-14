@@ -32,6 +32,7 @@ jobs:
             echo "✅ Linting passed"
           else
             echo "❌ Linting failed"
+            exit 1
           fi
 
       - name: 'Check code formatting'
@@ -40,6 +41,7 @@ jobs:
             echo "✅ Code formatting check passed"
           else
             echo "❌ Code formatting check failed"
+            exit 1
           fi
 
       - name: 'Compile the contracts'
