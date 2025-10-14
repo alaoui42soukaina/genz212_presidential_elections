@@ -101,7 +101,7 @@ jobs:
           if [ -d "test-results" ] && [ "$(ls -A test-results/*.json 2>/dev/null)" ]; then
             LATEST_JSON=$(ls -t test-results/mochawesome-report_*.json 2>/dev/null | head -1)
             if [ -n "$LATEST_JSON" ]; then
-              echo "🔍 For a detailed test report, check the 'test-report' artifact below" >> $GITHUB_STEP_SUMMARY
+              echo "🔍 For a detailed test report, check the \`test-report\` artifact below" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "📊 **Test Results:**" >> $GITHUB_STEP_SUMMARY
               
@@ -116,7 +116,7 @@ jobs:
                   if (stats.failures === 0) {
                     console.log('✅ 🎉 **TESTS PASSED**');
                   } else {
-                    console.log('❌ 😥 **TESTS FAILED**');
+                    console.log('😥 **TESTS FAILED**');
                   }
                   console.log('');
                   
@@ -164,6 +164,7 @@ jobs:
           fi
 
       - name: 'Find and upload test report'
+        if: always()
         run: |
           # Find the latest HTML report
           LATEST_REPORT=$(ls -t test-results/mochawesome-report_*.html 2>/dev/null | head -1)
