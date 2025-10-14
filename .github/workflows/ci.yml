@@ -27,34 +27,51 @@ jobs:
         run: 'npm ci'
 
       - name: 'Lint the code'
-        run: 'npm run lint'
+        run: |
+          if npm run lint; then
+            echo "✅ Linting passed"
+          else
+            echo "❌ Linting failed"
+            exit 1
+          fi
 
       - name: 'Check code formatting'
-        run: 'npm run format:check'
-
-      - name: 'Add lint summary'
         run: |
-          echo "## Lint results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+          if npm run format:check; then
+            echo "✅ Code formatting check passed"
+          else
+            echo "❌ Code formatting check failed"
+            exit 1
+          fi
 
       - name: 'Compile the contracts'
-        run: 'npm run compile'
+        run: |
+          if ! npm run compile; then
+            echo "❌ Contract compilation failed"
+            exit 1
+          fi
 
       - name: 'Create test results directory'
-        run: mkdir -p test-results
+        run: |
+          if ! mkdir -p test-results; then
+            echo "❌ Failed to create test results directory"
+            exit 1
+          fi
 
       - name: 'Run tests'
         run: |
           set -e
           MAX_RETRIES=2
           TIMEOUT=60
+          TESTS_PASSED=false
 
           for attempt in $(seq 1 $((MAX_RETRIES + 1))); do
             echo "Test attempt $attempt of $((MAX_RETRIES + 1))"
             
             if timeout $TIMEOUT npm test; then
               echo "✅ Tests passed on attempt $attempt"
-              exit 0
+              TESTS_PASSED=true
+              break
             else
               EXIT_CODE=$?
               if [ $EXIT_CODE -eq 124 ]; then
@@ -70,16 +87,24 @@ jobs:
                 npm run report:clean
               else
                 echo "💥 All test attempts failed"
+                TESTS_PASSED=false
                 exit $EXIT_CODE
               fi
             fi
           done
+          
+          # Final summary for CI
+          if [ "$TESTS_PASSED" = true ]; then
+            echo "🎉 TESTS PASSED"
+          else
+            echo "😥 TESTS FAILED"
+          fi
 
       - name: 'Generate test summary'
+        if: always()
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
           if [ -d "test-results" ] && [ "$(ls -A test-results/*.json 2>/dev/null)" ]; then
-            echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
             echo "📊 Test reports generated and available in the "test-report" artifact below" >> $GITHUB_STEP_SUMMARY
             
             # Extract test statistics and failures
@@ -139,11 +164,9 @@ jobs:
         run: |
           # Find the latest HTML report
           LATEST_REPORT=$(ls -t test-results/mochawesome-report_*.html 2>/dev/null | head -1)
-          if [ -n "$LATEST_REPORT" ]; then
-            echo "Found report: $LATEST_REPORT"
+          if ! [ -n "$LATEST_REPORT" ]; then
+            echo "❌ No HTML report found"
             echo "REPORT_PATH=$LATEST_REPORT" >> $GITHUB_ENV
-          else
-            echo "No HTML report found"
             echo "REPORT_PATH=" >> $GITHUB_ENV
           fi
 
