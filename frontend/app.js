@@ -189,6 +189,7 @@ async function loadCandidatesReadOnly() {
     // Load voter stats
     await loadVoterStats();
   } catch (error) {
+    throw new Error('Error loading candidates (read-only):', error.message);
   }
 }
 

@@ -9,5 +9,4 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 // Serve config files
 app.use('/config', express.static(path.join(__dirname, 'config')));
 
-app.listen(PORT, () => {
-});
+app.listen(PORT, () => {});

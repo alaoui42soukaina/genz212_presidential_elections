@@ -90,12 +90,11 @@ jobs:
             fi
           done
 
-
       - name: 'Generate test summary'
         if: always()
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
-          
+
           # Check if tests passed by looking at the latest test results
           if [ -d "test-results" ] && [ "$(ls -A test-results/*.json 2>/dev/null)" ]; then
             LATEST_JSON=$(ls -t test-results/mochawesome-report_*.json 2>/dev/null | head -1)
