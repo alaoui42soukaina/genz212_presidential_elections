@@ -13,6 +13,7 @@ describe('Voting Contract Integration Tests', function () {
   let electionManager;
   let votingCore;
   let resultsAggregator;
+  let owner;
   let voter1;
   let voter2;
   let voter3;
@@ -156,7 +157,7 @@ describe('Voting Contract Integration Tests', function () {
       await voting.connect(voter1).vote(numberOfVotes);
 
       // Check vote counts are synchronized
-      const totalVotesMain = (await voting.getTotalVotes());
+      const totalVotesMain = await voting.getTotalVotes();
       const totalVotesResults = await resultsAggregator.getTotalVotes();
 
       try {
@@ -220,7 +221,7 @@ describe('Voting Contract Integration Tests', function () {
       // 2. Start election
       const currentRound = 1;
       try {
-        await expect(voting.startElection())
+        await expect(voting.connect(owner).startElection())
           .to.emit(voting, 'ElectionStarted')
           .withArgs(currentRound);
       } catch (err) {
