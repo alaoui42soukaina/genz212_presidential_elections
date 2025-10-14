@@ -53,7 +53,11 @@ jobs:
             echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
             echo "📊 Test reports generated" >> $GITHUB_STEP_SUMMARY
             echo "📁 Report files:" >> $GITHUB_STEP_SUMMARY
-            ls -la test-results/*.json >> $GITHUB_STEP_SUMMARY
+            ls -la test-results/*.json test-results/*.html 2>/dev/null >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📋 **Access Options:**" >> $GITHUB_STEP_SUMMARY
+            echo "- 🌐 **Live Report:** https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/test-reports/${{ github.run_number }}/mochawesome-report_October_14_2025.html" >> $GITHUB_STEP_SUMMARY
+            echo "- 📦 **Download:** test-report artifact (zipped)" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ No test reports found" >> $GITHUB_STEP_SUMMARY
             echo "📁 Contents of test-results directory:" >> $GITHUB_STEP_SUMMARY
@@ -79,6 +83,14 @@ jobs:
           name: 'test-report'
           path: ${{ env.REPORT_PATH }}
           retention-days: 30
+
+      - name: 'Deploy report to GitHub Pages'
+        if: github.ref == 'refs/heads/main' && env.REPORT_PATH != ''
+        uses: 'peaceiris/actions-gh-pages@v3'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: test-results
+          destination_dir: test-reports/${{ github.run_number }}
 
       - name: 'Comment PR with test results'
         if: github.event_name == 'pull_request'
@@ -118,7 +130,9 @@ jobs:
                 
                 ${stats.failures > 0 ? '⚠️ Some tests failed. Please check the test reports.' : '🎉 All tests passed!'}
                 
-                📋 **Test Report:** Download the HTML report from the workflow artifacts to view detailed results.`;
+                📋 **Test Report:** 
+                - 🌐 **Live Report:** https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/test-reports/${{ github.run_number }}/
+                - 📦 **Download:** test-report artifact`;
                 
                 github.rest.issues.createComment({
                   issue_number: context.issue.number,
