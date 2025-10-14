@@ -44,7 +44,7 @@ jobs:
         run: npx hardhat test
 
       - name: 'Generate test report'
-        run: 'npm run test:report'
+        run: 'npm run report:open'
 
       - name: "Create directories if they don't exist"
         run: |
