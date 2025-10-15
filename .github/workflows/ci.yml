@@ -1,7 +1,7 @@
 name: 'CI'
 
 env:
-  HARDHAT_VAR_MNEMONIC: 'test test test test test test test test test test test junk'
+  HARDHAT_VAR_MNEMONIC: ${{ secrets.HARDHAT_VAR_MNEMONIC }}
 
 on:
   workflow_dispatch:
