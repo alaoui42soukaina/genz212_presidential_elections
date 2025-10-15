@@ -3,6 +3,11 @@ name: 'QA Tests'
 env:
   HARDHAT_VAR_MNEMONIC: ${{ secrets.HARDHAT_VAR_MNEMONIC }}
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 on:
   workflow_dispatch:
   pull_request:
