@@ -1,5 +1,4 @@
 require('@nomicfoundation/hardhat-toolbox');
-require('dotenv').config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -9,7 +8,7 @@ module.exports = {
       chainId: 1337,
     },
     localhost: {
-      url: process.env.HARDHAT_NETWORK_URL,
+      url: 'http://127.0.0.1:8545',
     },
   },
   paths: {
