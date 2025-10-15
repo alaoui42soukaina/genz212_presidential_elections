@@ -12,8 +12,7 @@
     "deploy": "hardhat run scripts/deploy.js --network localhost",
     "node": "hardhat node",
     "frontend": "node serve.js",
-    "dev": "concurrently \"npm run node\" \"npm run deploy\" \"npm run frontend\"",
-    "start": "npm run dev",
+    "start": "concurrently \"npm run node\" \"npm run deploy\" \"npm run frontend\"",
     "stop": "pkill -f 'hardhat node'",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -23,7 +22,9 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
     "eslint": "^8.57.0",
+    "express": "^5.1.0",
     "hardhat": "^2.19.0",
     "mochawesome": "^7.1.4",
     "prettier": "^3.6.2"

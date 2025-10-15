@@ -1,4 +1,4 @@
-# Voting DApp - Presidential Elections 2024
+# Voting DApp - Presidential Elections 2025
 
 A minimal decentralized voting application built with Hardhat, Solidity, and vanilla JavaScript.
 
@@ -12,7 +12,7 @@ A minimal decentralized voting application built with Hardhat, Solidity, and van
 
 ## Smart Contract Features
 
-- Add candidates (owner only)
+- Add candidates
 - Vote for candidates
 - Prevent double voting
 - Track vote counts
@@ -38,6 +38,10 @@ cd genz212_presidential_elections
 ```bash
 npm install
 ```
+
+This will automatically set up environment variables and install all dependencies.
+
+> **Note**: The `.env` file is created automatically with default test accounts. You can customize the MNEMONIC in `.env` if you want to use specific accounts.
 
 ## Usage
 
