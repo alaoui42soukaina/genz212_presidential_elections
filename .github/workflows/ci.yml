@@ -1,4 +1,4 @@
-name: 'CI'
+name: 'QA Tests'
 
 env:
   HARDHAT_VAR_MNEMONIC: ${{ secrets.HARDHAT_VAR_MNEMONIC }}
