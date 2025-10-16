@@ -2,6 +2,8 @@
 
 A decentralized voting dApp to organise the 2025 presidential elections for the Moroccan youth led GENZ212 movement.
 
+📹 Watch demo video [here](https://drive.google.com/file/d/1AHt4onKW3wVUOyH1YeXxgDi4B0C25EVU/view?usp=sharing)
+
 ## 🎁 Features
 
 - 🗳️ **Decentralized Voting** : Vote securely on the blockchain
