@@ -10,10 +10,6 @@ contract ResultsAggregator {
     // Reference to CandidateManager contract
     CandidateManager public candidateManager;
     
-    // Events
-    event ResultsCalculated(uint256 indexed electionRound, uint256 totalVotes);
-    event WinnerDeclared(uint256 indexed candidateId, string name, uint256 voteCount);
-    
     // Modifier to ensure only owner can perform admin functions
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
