@@ -1,35 +1,25 @@
-# Voting DApp - Presidential Elections 2025
+# Voting DApp - GENZ212 2025
 
-A minimal decentralized voting application built with Hardhat, Solidity, and vanilla JavaScript.
+A decentralized voting dApp to organise the 2025 presidential elections for the Moroccan youth led GENZ212 movement.
 
-## Features
+## 🎁 Features
 
-- 🗳️ **Decentralized Voting**: Vote securely on the blockchain
-- 🔒 **One Vote Per Address**: Prevents double voting
-- 📊 **Live Results**: Real-time vote counting
-- 🎨 **Modern UI**: Clean and responsive design
-- ⚡ **Fast & Lightweight**: Minimal dependencies
+- 🗳️ **Decentralized Voting** : Vote securely on the blockchain
+- 🛡️ **Vote protection** : Prevents duplicate votes and voting outside election periods
+- 🔒 **Admin controls** : Only admin can start or end elections
+- 📊 **Results Tracking** : Live vote tracking and detailed election results
+- 🎨 **Modern UI** : Clean and responsive design
 
-## Smart Contract Features
+## 📝 Prerequisites
 
-- Add candidates
-- Vote for candidates
-- Prevent double voting
-- Track vote counts
-- Get live results
-- Events for transparency
+- Node.js (v16 or higher)
 
-## Prerequisites
-
-- Node.js (v14 or higher)
-- Git
-
-## Installation
+## ⚙️ Installation
 
 1. Clone the repository:
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/alaoui42soukaina/genz212_presidential_elections.git
 cd genz212_presidential_elections
 ```
 
@@ -39,130 +29,100 @@ cd genz212_presidential_elections
 npm install
 ```
 
-This will automatically set up environment variables and install all dependencies.
+## 🧩 Project Structure
 
-> **Note**: The `.env` file is created automatically with default test accounts. You can customize the MNEMONIC in `.env` if you want to use specific accounts.
+```
+├── .github/                    # Github workflow for automated testing on code changes
+├── config/                     # Configuration files for accounts, candidates, deployment, and network
+├── contracts/                  # Smart contracts for the voting system
+├── frontend/                   # Web interface with HTML, CSS, and JavaScript
+├── scripts/                    # Deployment script
+├── test/
+│   ├── helpers/
+│   │   └── testHelpers.js      # Helpers for testing scripts
+│   ├── unitTests/              # Unit tests for individual contracts
+│   │   ├── CandidateManager.test.js
+│   │   ├── ElectionManager.test.js
+│   │   ├── ResultsAggregator.test.js
+│   │   └── VotingCore.test.js
+│   ├── Voting_E2E.test.js      # End-to-end tests
+│   └── Voting_Integration.test.js # Integration tests
+├── test-results/               # Test reports and coverage
+├── ...                         # Other files (hardhat.config.js, package.json, etc.)
+└── README.md                   # You are here 📍
+```
 
-## Usage
+## 🚀 Usage
 
 ### 1. Start Local Blockchain
 
 ```bash
-npm run node
+npm run start
 ```
 
-This will start a local Hardhat network on `http://127.0.0.1:8545`
+This will start a local Hardhat network on `http://localhost:8545`
 
-### 2. Deploy Contract
+The frontend UI will be available at `http://localhost:3000`
 
-In a new terminal:
+### 2. Start Voting!
 
-```bash
-npm run deploy
-```
+> ⚠️ **Note:** Blockchain transactions (starting/ending election and voting) may take a few seconds to process. Please wait for confirmations before proceeding.
 
-This will deploy the contract and add sample candidates (Alice Johnson, Bob Smith, Carol Davis).
-
-### 3. Open Frontend
-
-Open `frontend/index.html` in your browser.
-
-### 4. Start Voting!
-
-1. Select an account from the dropdown (20 test accounts available)
+1. Select admin account from the dropdown
 2. Click "Connect Account"
-3. Vote for your preferred candidate
-4. Use "Disconnect" to switch to another account and vote again
-5. Watch live results update in real-time
+3. Click "Start Election"
+4. Vote for your preferred candidate
+5. Use "Disconnect" and switch to another account to connect and vote again
+6. Connect back to Admin account
+7. Click "End Election"
+8. See results displayed
 
-## Testing
-
-Run the test suite:
-
-```bash
-npm test
-```
-
-## Project Structure
-
-```
-├── contracts/
-│   └── Voting.sol          # Main voting contract
-├── scripts/
-│   └── deploy.js           # Deployment script
-├── test/
-│   └── Voting.test.js      # Contract tests
-├── frontend/
-│   ├── index.html          # Main HTML file (includes all frontend logic)
-│   └── style.css           # Styling
-├── hardhat.config.js       # Hardhat configuration
-└── package.json            # Dependencies
-```
-
-## Smart Contract Functions
-
-### Owner Functions
-
-- `addCandidate(string name)` - Add a new candidate
-
-### Public Functions
-
-- `vote(uint256 candidateId)` - Vote for a candidate
-- `getCandidate(uint256 candidateId)` - Get candidate details
-- `getAllCandidates()` - Get all candidates
-- `checkVoted(address voter)` - Check if address has voted
-- `getTotalVotes()` - Get total votes cast
-
-## Security Features
-
-- Only contract owner can add candidates
-- One vote per address enforced
-- Input validation for candidate IDs
-- Events for transparency
-
-## Customization
-
-### Adding More Candidates
-
-Connect to the contract as owner and call:
-
-```javascript
-await voting.addCandidate('New Candidate Name');
-```
-
-### Styling
-
-Modify `frontend/style.css` to customize the appearance.
-
-### Contract Logic
-
-Edit `contracts/Voting.sol` to modify voting rules or add new features.
-
-## Troubleshooting
-
-### Connection Issues
+## 🔧 Troubleshooting
 
 - Make sure Hardhat node is running on port 8545
-- Check that the contract is deployed
+- Make sure port 3000 isn't already occupied
 
-### Transaction Failures
+## 🧪 Testing
 
-- Check you have enough ETH for gas
-- Ensure you haven't already voted
-- Verify candidate ID is valid
+Run all tests (unit, integration, e2e):
 
-## License
+```bash
+npx hardhat test
+```
 
-MIT License - feel free to use this project as a starting point for your own voting dApp!
+Run only integration tests :
 
-## Contributing
+```bash
+npx hardhat test --grep @integration
+```
+
+Run only E2E test :
+
+```bash
+npx hardhat test --grep @e2e
+```
+
+Run tests designed to fail to demonstrate error handling :
+
+```bash
+git checkout failing-tests
+npx hardhat test --grep @fail
+```
+
+Open test report :
+
+```bash
+npm report:open
+```
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+3. Write a `feedback.md` for Soukaïna
+4. Schedule with her the next rounds of interviews
+5. Make an offer 🫶
 
 ---
 
-Built with ❤️ using Hardhat, Solidity, and vanilla JavaScript
+Built with 💖 using Hardhat, Solidity, and Ethers.js
