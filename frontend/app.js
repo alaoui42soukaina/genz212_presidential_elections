@@ -452,3 +452,22 @@ async function showFinalResults() {
     console.error('Error loading final results:', error);
   }
 }
+
+// Vote function
+// eslint-disable-next-line no-unused-vars
+async function vote(candidateId) {
+  try {
+    if (!contract) {
+      throw new Error('Please connect an account first');
+    }
+
+    const tx = await contract.vote(candidateId);
+    await tx.wait();
+
+    alert('Vote cast successfully!');
+    await loadCandidates(); // Refresh the candidates list
+  } catch (error) {
+    console.error('Voting error:', error);
+    alert(`Error voting: ${error.message}`);
+  }
+}
