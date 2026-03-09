@@ -117,14 +117,6 @@ Open test report :
 npm report:open
 ```
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Write a `feedback.md` for Soukaïna
-4. Schedule with her the next rounds of interviews
-5. Make an offer 🫶
-
 ---
 
 Built with 💖 using Hardhat, Solidity, and Ethers.js
